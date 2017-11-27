@@ -20,6 +20,7 @@ dataset = pandas.read_csv(url, names=names)
 
 # class distribution
 # print(dataset.groupby('user_id').size())
+# print(dataset.pc_speed.mean())
 
 # # shape
 # print(dataset.shape)
@@ -34,8 +35,8 @@ dataset = pandas.read_csv(url, names=names)
 array = dataset.values
 X = array[:,4:10]
 Y = array[:,3]
-# print(type(X))
-# print(Y)
+print(type(X))
+print(Y)
 validation_size = 0.20
 seed = 7
 X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, Y, test_size=validation_size, random_state=seed)
@@ -43,9 +44,9 @@ X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(
 X_train = list(X_train)
 Y_train = list(Y_train)
 print(type(X_train))
-# print(X_train)
+print(X_train)
 print(type(Y_train))
-# print(Y_train)
+print(Y_train)
 
 # Test options and evaluation metric
 seed = 7
@@ -78,10 +79,18 @@ for name, model in models:
 # ax.set_xticklabels(names)
 # plt.show()
 
-# Make predictions on validation dataset
+# # Make predictions on validation dataset
 knn = KNeighborsClassifier()
 knn.fit(X_train, Y_train)
 predictions = knn.predict(X_validation)
+print(accuracy_score(Y_validation, predictions))
+print(confusion_matrix(Y_validation, predictions))
+print(classification_report(Y_validation, predictions))
+
+# Make predictions on validation dataset
+cart = DecisionTreeClassifier()
+cart.fit(X_train, Y_train)
+predictions = cart.predict(X_validation)
 print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
