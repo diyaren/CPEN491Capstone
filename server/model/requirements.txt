@@ -1,3 +1,10 @@
 pandas
 numpy
 click
+matplotlib
+keras
+tensorflow-gpu
+tensorboard
+pydot
+graphviz
+h5py
