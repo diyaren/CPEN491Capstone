@@ -1,5 +1,5 @@
 # cpen491
-Capstone project for Maximizer
+Capstone project for Cab4You
 
 ## Setting up
 ### First install the necessary frameworks
