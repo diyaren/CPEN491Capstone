@@ -1,2 +1,2 @@
 # cpen491
-Capstone project for Maximizer
+Capstone project for Cab4You
