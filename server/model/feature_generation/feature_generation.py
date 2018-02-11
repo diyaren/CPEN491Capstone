@@ -7,7 +7,7 @@ import numpy as np
 from preprocessing import *
 
 
-ORIGINAL_DATASET_PATH = "../../../temp_cpen491_model_setup/training_data/axa_original/"
+ORIGINAL_DATASET_PATH = "../../../../temp_cpen491_model_setup/training_data/axa_original/"
 NUM_FEATURES = 81
 
 
@@ -39,7 +39,6 @@ def features_from_trip(trip, plotting=False):
     # compute speed statistics    
     mean_speed = smooth_speed.mean()
     max_speed = max(smooth_speed)
-    std_speed = speed.std()
     # 3. acceleration
     smooth_accel = np.diff(smooth_speed)    
     
@@ -48,24 +47,15 @@ def features_from_trip(trip, plotting=False):
     neg_accel = accel_s[accel_s<0]
     pos_accel = accel_s[accel_s>0]
 
-    # 3.3 average breaking strength
-    mean_breaking = neg_accel.mean()
+    # 3.3 average braking strength
+    mean_braking = neg_accel.mean()
     mean_acceleration = pos_accel.mean() 
     
     # summary statistics
-    std_breaking = neg_accel.std()
-    std_acceleration = pos_accel.std()
+    mean_acceleration = pos_accel.mean()
     
     # 4. total distance traveled    
     total_dist = np.sum(smooth_speed,axis=0)               
-    
-    # 5. relative standzeit (last 5% are discarded due standing)
-    last = round(len(trip)*0.05)
-    eps = 1 # threshold for determining standing
-    
-    # relative standzeit
-    speed_red = np.array(speed)[:last]
-    standzeit = len(speed_red[speed_red<0+eps])/float(duration) 
     
     #### DRIVING STYLE REALTED FEATURES ####
     # 1. acceleration from stop
@@ -135,21 +125,16 @@ def features_from_trip(trip, plotting=False):
         
     #legend()
     ######################################
-    
     return np.concatenate((speed_quantiles,
                            accel_quantiles,
                            head_quantiles_x,
                            head_quantiles_y,
-                           np.array([duration,
-                                     total_dist,
-                                     #standzeit,
-                                     std_speed,
-                                     std_breaking,
-                                     std_acceleration,
-                                     #std_anfahren,
-                                     #mean_anfahren,
-                                     #max_anfahren,
-                                     n_stops,hometrip])))
+                           np.array([mean_speed,
+                                     mean_braking,
+                                     mean_acceleration,
+                                     std_anfahren,
+                                     mean_anfahren,
+                                     max_anfahren])))
 
 
 def generate_from_dataset():
@@ -182,7 +167,7 @@ def generate_from_dataset():
             break
 
     
-    np.save(os.path.join('myfeatures.npy'), feature_matrix)    
+    np.save(os.path.join('myfeatures.npy'), feature_matrix)
     
 
 
