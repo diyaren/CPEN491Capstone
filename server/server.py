@@ -195,4 +195,6 @@ def put_model_result(tma_id):
 	logIDs.remove(driver_id)	#remove log after processing confirmation
 	return 'log correction applied (or not)', 200
 	
-	
+
+if __name__ == "__main__":
+	app.run(host="0.0.0.0")
