@@ -2,11 +2,19 @@ from flask import Flask, jsonify, request
 from werkzeug.utils import secure_filename
 import os
 from random import randint
+from pusher_push_notifications import PushNotifications
+
 
 UPLOAD_DIR = 'logs/'	#temp dir
 
 app = Flask(__name__)
 app.config['UPLOAD_DIR'] = UPLOAD_DIR
+
+
+pn_client = PushNotifications(
+    instance_id='105aa624-524f-4fca-84a5-ee1f86872ece',
+    secret_key='74E645E65BAE00A26F2EE06464DF4D6',
+)
 
 #import sys
 
@@ -175,6 +183,16 @@ def patch_model_result(tma_id):
 	driver_results[driver_id] = make_prediction(driver_id)
 	if pred == False:
 		logIDs.append(driver_id)		# just insert driver_id as a log_id for now
+		response = pn_client.publish(
+    		interests=['prediction'],
+    		"fcm": {
+      			"notification": {
+        			"title": "Hi!",
+        			"body": "This is my first Push Notification!"
+      			}
+    		}
+		)
+		print(response['publishId'])
 	return 'log saved, prediction made', 200
 	
 
