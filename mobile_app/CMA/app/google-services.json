@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "62494107083",
+    "firebase_url": "https://capstone-89d9b.firebaseio.com",
+    "project_id": "capstone-89d9b",
+    "storage_bucket": "capstone-89d9b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:62494107083:android:5a18990be32aa61d",
+        "android_client_info": {
+          "package_name": "net.accedegh.locationupdates"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "62494107083-onimap770bj4408v3dikhibol2oki39m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkGwVqDYiYGIRFupGumJw-4RbbjOa5mBw"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

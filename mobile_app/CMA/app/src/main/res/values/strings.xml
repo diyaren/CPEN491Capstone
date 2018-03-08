@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">LocationUpdates</string>
+    <string name="map_api_key">AIzaSyAYexB9ObixIZ1mQOCWXSz1Cn51rhk-RfM</string>
+    <string name="title_activity_notification">Notification</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+</resources>
