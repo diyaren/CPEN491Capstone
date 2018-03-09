@@ -1,3 +1,6 @@
 pandas
 numpy
 click
+scikit-learn
+scipy
+matplotlib
