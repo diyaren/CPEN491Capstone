@@ -60,7 +60,7 @@ def push_notif():
 		'fcm': {
   			'notification': {
     			'title': 'Hi!',
-    			'body': 'This is my first Push Notification!'
+    			'body': 'This is my first Push Notification!',
   			}
 		}
 	)
