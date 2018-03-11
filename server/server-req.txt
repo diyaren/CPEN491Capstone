@@ -5,4 +5,4 @@ Jinja2==2.10
 MarkupSafe==1.0
 Werkzeug==0.14.1
 gunicorn==19.7.1
-pusher_push_notifications==0.9.1
+pusher-push-notifications==0.9.1
