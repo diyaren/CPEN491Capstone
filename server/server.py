@@ -200,16 +200,16 @@ def patch_model_result(tma_id):
 	driver_results[driver_id] = make_prediction(driver_id)
 	if pred == False:
 		logIDs.append(driver_id)		# just insert driver_id as a log_id for now
-		response = pn_client.publish(
-    		interests=['prediction'],
-    		"fcm": {
-      			"notification": {
-        			"title": "Hi!",
-        			"body": "This is my first Push Notification!"
-      			}
-    		}
-		)
-		print(response['publishId'])
+		# response = pn_client.publish(
+  #   		interests=['prediction'],
+  #   		"fcm": {
+  #     			"notification": {
+  #       			"title": "Hi!",
+  #       			"body": "This is my first Push Notification!"
+  #     			}
+  #   		}
+		# )
+		# print(response['publishId'])
 	return 'log saved, prediction made', 200
 	
 
