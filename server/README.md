@@ -31,6 +31,18 @@ $ python server.py
 
 
 # Production Server
+## The following has already been done and is only a description of the setup
+on the instance.
+
+[Gunicorn](http://gunicorn.org/) is used as http server.
+
+[Nginx](https://www.nginx.com/) acts as a reverse proxy to take in traffic on port 80.
+ 
+There is a systemd unit file in ```/etc/systemd/system/server.service``` that
+configures the instance to run gunicorn on startup (0.0.0.0:5000).
+
+Nginx setup is in ```/etc/nginx/sites-available```, symlinked to ```/etc/nginx/sites-enabled```
+
 ## Usage
 Contact someone with access to the server to get your RSA public key onto the
 server.  SSH into the server with:
@@ -45,20 +57,7 @@ If you need to restart the server (ie. after a ```git pull```) run:
 $ sudo systemctl restart server
 ```
 
-allow 'Nginx Full'
-The following has already been done and is only a description of the setup
-on the instance.
-
-[Gunicorn](http://gunicorn.org/) is used as http server.
-
-[Nginx](https://www.nginx.com/) acts as a reverse proxy to take in traffic on port 80.
- 
-There is a systemd unit file in ```/etc/systemd/system/server.service``` that
-configures the instance to run gunicorn on startup (0.0.0.0:5000).
-
-Nginx setup is in ```/etc/nginx/sites-available```, symlinked to ```/etc/nginx/sites-enabled```
-
-## Debugging Production
+## Debugging Production Issues
 Check that Nginx is up and listening on port 80:
 ```bash
 $ netstat -plnt
