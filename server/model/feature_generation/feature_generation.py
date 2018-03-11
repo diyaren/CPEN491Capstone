@@ -5,7 +5,6 @@ from preprocessing import *
 
 
 ORIGINAL_DATASET_PATH = "../../../../temp_cpen491_model_setup/training_data/axa_original/"
-NUM_FEATURES = 81
 
 
 def features_from_trip(trip, plotting=False):
@@ -34,7 +33,9 @@ def features_from_trip(trip, plotting=False):
 	head_quantiles_y = ss.mstats.mquantiles(head_y,np.linspace(0.02,0.99,10))
 
 	# compute speed statistics    
+	std_speed = smooth_speed.std()
 	mean_speed = smooth_speed.mean()
+	var_speed = np.var(smooth_speed)
 	max_speed = max(smooth_speed)
 	# 3. acceleration
 	smooth_accel = np.diff(smooth_speed)    
@@ -45,8 +46,12 @@ def features_from_trip(trip, plotting=False):
 	pos_accel = accel_s[accel_s>0]
 
 	# 3.3 average braking strength
+	std_braking =  neg_accel.std()
 	mean_braking = neg_accel.mean()
+	var_braking = np.var(neg_accel)
+	std_acceleration = pos_accel.std()
 	mean_acceleration = pos_accel.mean() 
+	var_acceleration = np.var(pos_accel)
 
 	# summary statistics
 	mean_acceleration = pos_accel.mean()
@@ -118,14 +123,18 @@ def features_from_trip(trip, plotting=False):
 	#legend()
 	######################################
 	return np.concatenate((speed_quantiles,
-		np.square(speed_quantiles),
 		accel_quantiles,
-		np.square(accel_quantiles),
 		head_quantiles_x,
 		head_quantiles_y,
-		np.array([mean_speed,
+		np.array([std_speed,
+			mean_speed,
+			var_speed,
+			std_braking,
 			mean_braking,
+			var_braking,
+			std_acceleration,
 			mean_acceleration,
+			var_acceleration,
 			std_anfahren,
 			mean_anfahren,
 			max_anfahren])
