@@ -52,20 +52,21 @@ def make_prediction(driver_id):
 	else:
 		return True
 
+
 #Test for push notifications
-@app.route('/tma/push', methods=['POST'])
-def push_notif():
-	response = pn_client.publish(
-		interests=['prediction'],
-		'fcm': {
-  			'notification': {
-    			'title': 'Hi!',
-    			'body': 'This is my first Push Notification!',
-  			}
-		}
-	)
-	print(response['publishId'])
-	return 'push notification sent', 200
+# @app.route('/tma/push', methods=['POST'])
+# def push_notif():
+# 	response = pn_client.publish(
+# 		interests=['prediction'],
+# 		'fcm': {
+#   			'notification': {
+#     			'title': 'Hi!',
+#     			'body': 'This is my first Push Notification!',
+#   			}
+# 		}
+# 	)
+# 	print(response['publishId'])
+# 	return 'push notification sent', 200
 
 	
 #Endpoints to enable TMA tracking functionalities
