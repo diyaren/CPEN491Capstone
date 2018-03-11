@@ -57,10 +57,10 @@ def make_prediction(driver_id):
 def push_notif():
 	response = pn_client.publish(
 		interests=['prediction'],
-		"fcm": {
-  			"notification": {
-    			"title": "Hi!",
-    			"body": "This is my first Push Notification!"
+		'fcm': {
+  			'notification': {
+    			'title': 'Hi!',
+    			'body': 'This is my first Push Notification!'
   			}
 		}
 	)
