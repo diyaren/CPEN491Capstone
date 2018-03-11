@@ -12,8 +12,8 @@ app.config['UPLOAD_DIR'] = UPLOAD_DIR
 
 
 pn_client = PushNotifications(
-    instance_id='105aa624-524f-4fca-84a5-ee1f86872ece',
-    secret_key='74E645E65BAE00A26F2EE06464DF4D6',
+	instance_id='105aa624-524f-4fca-84a5-ee1f86872ece',
+	secret_key='74E645E65BAE00A26F2EE06464DF4D6',
 )
 
 #import sys
@@ -54,19 +54,21 @@ def make_prediction(driver_id):
 
 
 #Test for push notifications
-# @app.route('/tma/push', methods=['POST'])
-# def push_notif():
-# 	response = pn_client.publish(
-# 		interests=['prediction'],
-# 		'fcm': {
-#   			'notification': {
-#     			'title': 'Hi!',
-#     			'body': 'This is my first Push Notification!',
-#   			}
-# 		}
-# 	)
-# 	print(response['publishId'])
-# 	return 'push notification sent', 200
+@app.route('/tma/push', methods=['POST'])
+def push_notif():
+	response = pn_client.publish(
+		interests=['prediction'],
+		publish_body={
+			'fcm': {
+	  			'notification': {
+	    			'title': 'Hi!',
+	    			'body': 'This is my first Push Notification!',
+	  			}
+			}
+		}
+	)
+	print(response['publishId'])
+	return 'push notification sent', 200
 
 	
 #Endpoints to enable TMA tracking functionalities
@@ -200,16 +202,18 @@ def patch_model_result(tma_id):
 	driver_results[driver_id] = make_prediction(driver_id)
 	if pred == False:
 		logIDs.append(driver_id)		# just insert driver_id as a log_id for now
-		# response = pn_client.publish(
-  #   		interests=['prediction'],
-  #   		"fcm": {
-  #     			"notification": {
-  #       			"title": "Hi!",
-  #       			"body": "This is my first Push Notification!"
-  #     			}
-  #   		}
-		# )
-		# print(response['publishId'])
+		response = pn_client.publish(
+			interests=['prediction'],
+			publish_body={
+				'fcm': {
+					'notification': {
+						'title': 'Hi!',
+						'body': 'This is my first Push Notification!'
+					}
+				}
+			}
+		)
+		print(response['publishId'])
 	return 'log saved, prediction made', 200
 	
 
