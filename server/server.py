@@ -1,200 +1,380 @@
-from flask import Flask, jsonify, request
-from werkzeug.utils import secure_filename
-import os
+from flask import Flask, jsonify, request, json
+from sqlalchemy import func
+from flask_sqlalchemy import SQLAlchemy
+from flask_marshmallow import Marshmallow
 from random import randint
-
-UPLOAD_DIR = 'logs/'	#temp dir
-
-app = Flask(__name__)
-app.config['UPLOAD_DIR'] = UPLOAD_DIR
-
-#import sys
-
-#sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/model')
-#from predict_model import predict
+import time
+import multiprocessing
+import sys
+# sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/model')
+# from predict_model import predict
 
 """
 TODO
-- decide on request content-header format: DONE
-- decide on location data format: DONE
-- write tmaIDs to file or DB for crash resistance
-- utilize file save and restore for models/Implement models
-- use file upload for logs: DONE
-- use celery for async task? if model takes too long to compute
-- add notifying CMA of driver anomly
+- implement proper model prediction and training
+- implement multiprocessing for model prediction/training/logging: half done
+- add push notifications to CMA with session_num and driver_id
+- refactor code to be more modular (use flask's blueprint)
+- write unit tests
+- allow for DB initialization through running server: done
 """
 
-# Current data structure for TMA registration and location storage; change to file/DB later
-tma_locations = {}
-#temp data structure to register driver models and results; to be replaced with machine learning model archnitecture
-driver_results = {}
-#saved log IDs from driver anomlys
-logIDs = []
 
-#Translation from tmaID to current driverID according to dispatch system
+app = Flask(__name__)
+
+
+#DB setup
+DEFAULT_DB_PATH = 'test.db'
+db = SQLAlchemy(app)
+ma = Marshmallow(app)
+
+
+class Logs(db.Model):
+    driverID = db.Column(db.Integer, primary_key=True)
+    sessionNum = db.Column(db.Integer, primary_key=True)
+    sampleNum = db.Column(db.Integer, primary_key=True)
+    time = db.Column(db.String(255))
+    timeLong = db.Column(db.Integer)
+    xCoord = db.Column(db.Float)
+    yCoord = db.Column(db.Float)
+    __tablename__ = 'Logs'
+
+
+class TMAs(db.Model):
+    tmaID = db.Column(db.Integer, primary_key=True)
+    xCoord = db.Column(db.Float)
+    yCoord = db.Column(db.Float)
+    __tablename__ = 'TMAs'
+
+
+class Drivers(db.Model):
+    driverID = db.Column(db.Integer, primary_key=True)
+    prediction = db.Column(db.Integer)
+    __tablename__ = 'Drivers'
+
+
+class LogsSchema(ma.ModelSchema):
+    class Meta:
+        model = Logs
+
+
+class TMAsSchema(ma.ModelSchema):
+    class Meta:
+        model = TMAs
+
+
+class DriversSchema(ma.ModelSchema):
+    class Meta:
+        model = Drivers
+
+
+# Translation from tmaID to current driverID according to dispatch system
 def tmaID_to_driverID(tma_id):
-	#TODO hookup to dispatch
-	return tma_id;
+    # TODO hookup to dispatch
+    return tma_id;
 
-#placeholder model
+
+# placeholder model
 def make_prediction(driver_id):
-	x = randint(0,9)
-	if x < 3:
-		return False
-	else:
-		return True
-	
-#Endpoints to enable TMA tracking functionalities
+    time.sleep(5)  # example model take 5s to make predictions
+    x = randint(0, 9)
+    if x < 3:
+        return 0
+    else:
+        return 1
 
-#Get locations of registered TMAs
+
+# placeholder multiprocessing model
+def make_prediction_async(driver_id):
+    print('async: making prediction')
+    time.sleep(5)  # example model take 5s to make predictions
+    x = randint(0, 9)
+    driver = Drivers.query.get(driver_id)
+    if x < 3:
+        driver.prediction = 0;
+        #push notification goes here?
+    else:
+        driver.prediction = 1;
+    db.session.commit()
+    # print(driver_id)
+    # print(results[driver_id])
+    print('async: prediction made')
+    return
+
+
+# QUICK TEST ROUTE; IGNORE
+@app.route('/db/<int:tma_id>', methods=['POST'])
+def db_test_route(tma_id):
+    # temp prediction
+    tma_exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
+    if tma_exists is None:
+        return jsonify({"status": "fail", "data": {"tma_id": "%s is not registered" % tma_id}}), 400
+
+    driver_id = tmaID_to_driverID(tma_id)
+    if driver_id is None:
+        return jsonify({"status": "fail",
+                        "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
+
+    driver_exists = db.session.query(Drivers.driverID).filter_by(driverID=driver_id).scalar()
+    if driver_exists is None:
+        return jsonify({"status": "fail", "data": {"tma_id": "%s does not correspond to a driver model" % tma_id}}), 400
+
+    p = multiprocessing.Process(target=make_prediction_async, args=(driver_id,))
+    p.start()
+    return jsonify({"status": "success", "data": None}), 200
+
+
+# Endpoints to enable TMA tracking functionalities
+
+# Get locations of registered TMAs
 @app.route('/tma', methods=['GET'])
 def get_tma():
-	return jsonify(tma_locations), 200
+    tmas = TMAs.query.all()
+    tmas_result = TMAsSchema(many=True).dump(tmas)
+    return jsonify({"status": "success", "data": {"tmas": tmas_result}}), 200
 
-#Create/Register a new TMA
-@app.route('/tma/<string:tma_id>', methods=['POST'])
+
+# Create/Register a new TMA
+@app.route('/tma/<int:tma_id>', methods=['POST'])
 def post_tma(tma_id):
-	if tma_id in tma_locations:
-		return jsonify({'error': 'tma_id "%s" already exists' % tma_id}), 409
-	else:
-		tma_locations[tma_id] = {}
-		return 'tma created with tma_id "%s"' % tma_id, 201
+    exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
 
-#Update a single TMA's location
-@app.route('/tma/<string:tma_id>', methods=['PUT'])
-def  put_tma(tma_id):
-	location_data = request.json.get('location_data')
-	if tma_id not in tma_locations:
-		return jsonify({'error':'tma_id "%s" does not exist' % tma_id}), 404
-	elif location_data == None:
-		return jsonify({'error':'No {location_data} in body of request'}), 400
-	else:
-		tma_locations[tma_id] = location_data
-		return 'tma %s location data updated' % tma_id, 200
+    if exists is not None:
+        return jsonify({"status": "fail", "data": {"tma_id": "%s already exists" % tma_id}}), 409
+    else:
+        new_tma = TMAs(tmaID=tma_id)
+        db.session.add(new_tma)
+        db.session.commit()
+        return jsonify({"status": "success", "data": None}), 201
 
-#Unregister a single TMA
-@app.route('/tma/<string:tma_id>', methods=['DELETE'])
-def  delete_tma(tma_id):
-	if tma_id not in tma_locations:
-		return jsonify({'error':'tma_id "%s" does not exist' % tma_id}), 404
-	else:
-		del tma_locations[tma_id]
-		return 'tma with tma_id "%s" deleted' % tma_id, 200
 
-#Endpoints for driver models
-		
-#Create a new model for a driver
-@app.route('/model/<string:tma_id>', methods=['POST'])
+# Update a single TMA's location
+@app.route('/tma/<int:tma_id>', methods=['PUT'])
+def put_tma(tma_id):
+    tma = TMAs.query.get(tma_id)
+    coordinates = request.json.get('coordinates')
+
+    if tma is None:
+        return jsonify({"status": "fail", "data": {"tma_id": "%s does not exist" % tma_id}}), 404
+    elif coordinates is None:
+        return jsonify({"status": "fail", "data": {"coordinates": "No coordinates list in body of request"}}), 400
+    else:
+        tma.xCoord = coordinates[0]
+        tma.yCoord = coordinates[1]
+        db.session.commit()
+        return jsonify({"status": "success", "data": None}), 200
+
+
+# Unregister a single TMA
+@app.route('/tma/<int:tma_id>', methods=['DELETE'])
+def delete_tma(tma_id):
+    tma = TMAs.query.get(tma_id)
+
+    if tma is None:
+        return jsonify({"status": "fail", "data": {"tma_id": "%s does not exist" % tma_id}}), 404
+    else:
+        db.session.delete(tma)
+        db.session.commit()
+        return jsonify({"status": "fail", "data": None}), 200
+
+
+# Endpoints for driver models
+
+# Create a new model for a driver
+@app.route('/model/<int:tma_id>', methods=['POST'])
 def post_model(tma_id):
-	if tma_id not in tma_locations:
-		return jsonify({'error':'tma_id "%s" is not registered' % tma_id}), 404
-	
-	driver_id = tmaID_to_driverID(tma_id)
-	if driver_id == None:
-		return jsonify({'error':'tma_id "%s" does not correspond to a driver according to dispatch' % tma_id}), 404
-	if driver_id in driver_results:
-		return jsonify({'error':'tma_id "%s" corresponds to a driver which already has a model' % tma_id}), 403
-		
-	driver_results[driver_id] = 0
-	return 'model for driver "%s" created' % driver_id, 201
+    tma_exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
+    if tma_exists is None:
+        return jsonify({"status": "fail", "data": {"tma_id": "%s is not registered" % tma_id}}), 400
 
-#Train a single driver model with a log
-@app.route('/model/<string:tma_id>', methods=['PATCH'])
+    driver_id = tmaID_to_driverID(tma_id)
+    if driver_id is None:
+        return jsonify({"status": "fail",
+                        "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
+
+    driver_exists = db.session.query(Drivers.driverID).filter_by(driverID=driver_id).scalar()
+    if driver_exists is not None:
+        return jsonify({"status": "fail",
+                        "data": {"tma_id": "%s corresponds to a driver which already has a model" % tma_id}}), 403
+
+    new_driver = Drivers(driverID=driver_id, prediction=-1)
+    db.session.add(new_driver)
+    db.session.commit()
+    return jsonify({"status": "success", "data": None}), 201
+
+
+# Train a single driver model with a log
+@app.route('/model/<int:tma_id>', methods=['PATCH'])
 def patch_model(tma_id):
-	if tma_id not in tma_locations:
-		return jsonify({'error':'tma_id "%s" is not registered' % tma_id}), 404
-	driver_id = tmaID_to_driverID(tma_id)
-	if driver_id == None:
-		return jsonify({'error':'tma_id "%s" does not correspond to a driver according to dispatch' % tma_id}), 404
-	if driver_id not in driver_results:
-		return jsonify({'error':'tma_id "%s" does not correspond to a driver model' % tma_id}), 400
-		
-	if 'log' not in request.files:
-		return jsonify({'error':'no log file attached'}), 400
-	else:
-		file = request.files['log']
-		filename = secure_filename(file.filename)
-		file.save(os.path.join(app.config['UPLOAD_DIR'], filename))
-		return 'saved file', 200
+    tma_exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
+    if tma_exists is None:
+        return jsonify({"status": "fail", "data": {"tma_id": "%s is not registered" % tma_id}}), 400
 
-#Delete a single driver model
-@app.route('/model/<string:tma_id>', methods=['DELETE'])
+    driver_id = tmaID_to_driverID(tma_id)
+    if driver_id is None:
+        return jsonify({"status": "fail",
+                        "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
+
+    driver_exists = db.session.query(Drivers.driverID).filter_by(driverID=driver_id).scalar()
+    if driver_exists is None:
+        return jsonify({"status": "fail", "data": {"tma_id": "%s does not correspond to a driver model" % tma_id}}), 400
+
+    if 'log' not in request.files:
+        return jsonify({"status": "fail", "data": {"log": "no log file attached"}}), 400
+    else:
+        file = request.files['log']
+        data = json.loads(file.read())
+        new_session_num = db.session.query(func.max(Logs.sessionNum)).filter_by(driverID=driver_id).scalar() + 1
+        new_sample_num = 0
+        for feature in data['features']:
+            new_log = Logs(
+                driverID=driver_id,
+                sessionNum=new_session_num,
+                sampleNum=new_sample_num,
+                time=feature['properties']['time'],
+                timeLong=feature['properties']['time_long'],
+                xCoord=feature['geometry']['coordinates'][0],
+                yCoord=feature['geometry']['coordinates'][1],
+            )
+            db.session.add(new_log)
+            new_sample_num += 1
+        db.session.commit()
+
+    return jsonify({"status": "success", "data": None}), 200
+
+
+# Delete a single driver model
+@app.route('/model/<int:tma_id>', methods=['DELETE'])
 def delete_model(tma_id):
-	if tma_id not in tma_locations:
-		return jsonify({'error':'tma_id "%s" is not registered' % tma_id}), 404
-	driver_id = tmaID_to_driverID(tma_id)
-	if driver_id == None:
-		return jsonify({'error':'tma_id "%s" does not correspond to a driver according to dispatch' % tma_id}), 400
-	if driver_id not in driver_results:
-		return jsonify({'error':'tma_id "%s" does not correspond to a driver model' % tma_id}), 400
-	
-	del driver_results[driver_id]
-	return 'model for driver "%s" deleted' % driver_id, 200
-	
-#Endpoints for model predictions
+    tma_exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
+    if tma_exists is None:
+        return jsonify({"status": "fail", "data": {"tma_id": "%s is not registered" % tma_id}}), 400
 
-#Get most recent prediction for a single driver
-@app.route('/model/<string:tma_id>/result', methods=['GET'])
+    driver_id = tmaID_to_driverID(tma_id)
+    if driver_id is None:
+        return jsonify({"status": "fail",
+                        "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
+
+    driver = Drivers.query.get(driver_id)
+    if driver is None:
+        return jsonify({"status": "fail", "data": {"tma_id": "%s does not correspond to a driver model" % tma_id}}), 400
+
+    db.session.delete(driver)
+    db.session.commit()
+    return jsonify({"status": "success", "data": None}), 200
+
+
+# Endpoints for model predictions
+
+# Get most recent prediction for a single driver
+@app.route('/model/<int:tma_id>/prediction', methods=['GET'])
 def get_model_result(tma_id):
-	if tma_id not in tma_locations:
-		return jsonify({'error':'tma_id "%s" is not registered' % tma_id}), 404
-	driver_id = tmaID_to_driverID(tma_id)
-	if driver_id == None:
-		return jsonify({'error':'tma_id "%s" does not correspond to a driver according to dispatch' % tma_id}), 400
-	if driver_id not in driver_results:
-		return jsonify({'error':'tma_id "%s" does not correspond to a driver model' % tma_id}), 400
-		
-	result = driver_results[driver_id]
-	if result == 0:
-		return jsonify({'result':'not yet calculated'}), 204
-	elif result == -1:
-		return jsonify({'result':False}), 200
-	else:
-		return jsonify({'result':True}), 200
+    tma_exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
+    if tma_exists is None:
+        return jsonify({"status": "fail", "data": {"tma_id": "%s is not registered" % tma_id}}), 400
 
-#Update prediction for a single driver based on log
-@app.route('/model/<string:tma_id>/result', methods=['PATCH'])
+    driver_id = tmaID_to_driverID(tma_id)
+    if driver_id is None:
+        return jsonify({"status": "fail",
+                        "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
+
+    driver = Drivers.query.get(driver_id)
+    if driver is None:
+        return jsonify({"status": "fail", "data": {"tma_id": "%s does not correspond to a driver model" % tma_id}}), 400
+
+    pred = driver.prediction
+    if pred == -1:
+        return jsonify({"status": "success", "data": {"prediction": None}}), 200
+    elif pred == 0:
+        return jsonify({"status": "success", "data": {"prediction": False}}), 200
+    else:
+        return jsonify({"status": "success", "data": {"prediction": True}}), 200
+
+
+# Update prediction for a single driver based on log
+@app.route('/model/<int:tma_id>/prediction', methods=['PATCH'])
 def patch_model_result(tma_id):
-	if tma_id not in tma_locations:
-		return jsonify({'error':'tma_id "%s" is not registered' % tma_id}), 404
-	driver_id = tmaID_to_driverID(tma_id)
-	if driver_id == None:
-		return jsonify({'error':'tma_id "%s" does not correspond to a driver according to dispatch' % tma_id}), 404
-	if driver_id not in driver_results:
-		return jsonify({'error':'tma_id "%s" does not correspond to a driver model' % tma_id}), 400
-		
-	if 'log' not in request.files:
-		return jsonify({'error':'no log file attached'}), 400
-	else:
-		file = request.files['log']
-		filename = secure_filename(file.filename)
-		file.save(os.path.join(app.config['UPLOAD_DIR'], filename))
-		
-	#temp prediction
-	pred = make_prediction(driver_id)
-	driver_results[driver_id] = make_prediction(driver_id)
-	if pred == False:
-		logIDs.append(driver_id)		# just insert driver_id as a log_id for now
-	return 'log saved, prediction made', 200
-	
+    tma_exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
+    if tma_exists is None:
+        return jsonify({"status": "fail", "data": {"tma_id": "%s is not registered" % tma_id}}), 400
 
-#Confirm whether driver anomly was correct or incorrect
-@app.route('/model/<string:tma_id>/result', methods=['PUT'])
+    driver_id = tmaID_to_driverID(tma_id)
+    if driver_id is None:
+        return jsonify({"status": "fail",
+                        "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
+
+    driver_exists = db.session.query(Drivers.driverID).filter_by(driverID=driver_id).scalar()
+    if driver_exists is None:
+        return jsonify({"status": "fail", "data": {"tma_id": "%s does not correspond to a driver model" % tma_id}}), 400
+
+    if 'log' not in request.files:
+        return jsonify({"status": "fail", "data": {"log": "no log file attached"}}), 400
+    else:
+        file = request.files['log']
+        data = json.loads(file.read())
+        new_session_num = db.session.query(func.max(Logs.sessionNum)).filter_by(driverID=driver_id).scalar() + 1
+        new_sample_num = 0
+        for feature in data['features']:
+            new_log = Logs(
+                driverID=driver_id,
+                sessionNum=new_session_num,
+                sampleNum=new_sample_num,
+                time=feature['properties']['time'],
+                timeLong=feature['properties']['time_long'],
+                xCoord=feature['geometry']['coordinates'][0],
+                yCoord=feature['geometry']['coordinates'][1],
+            )
+            db.session.add(new_log)
+            new_sample_num += 1
+        db.session.commit()
+
+    # temp prediction
+    p = multiprocessing.Process(target=make_prediction_async, args=(driver_id,))
+    p.start()
+
+    return jsonify({"status": "success", "data": None}), 200
+
+
+# Confirm whether driver anomly was correct or incorrect
+@app.route('/model/<int:tma_id>/prediction', methods=['PUT'])
 def put_model_result(tma_id):
-	if tma_id not in tma_locations:
-		return jsonify({'error':'tma_id "%s" is not registered' % tma_id}), 404
-	driver_id = tmaID_to_driverID(tma_id)
-	if driver_id == None:
-		return jsonify({'error':'tma_id "%s" does not correspond to a driver according to dispatch' % tma_id}), 404
-	if driver_id not in driver_results:
-		return jsonify({'error':'tma_id "%s" does not correspond to a driver model' % tma_id}), 400
-	result_confirm = request.json.get('result_confirm')
-	if result_confirm == None:
-		return jsonify({'error':'No {result_confirm} in body of request'}), 400
-		
-	logIDs.remove(driver_id)	#remove log after processing confirmation
-	return 'log correction applied (or not)', 200
-	
+    tma_exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
+    if tma_exists is None:
+        return jsonify({"status": "fail", "data": {"tma_id": "%s is not registered" % tma_id}}), 400
 
-if __name__ == "__main__":
-	app.run(host="0.0.0.0")
+    driver_id = tmaID_to_driverID(tma_id)
+    if driver_id is None:
+        return jsonify({"status": "fail",
+                        "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
+
+    driver_exists = db.session.query(Drivers.driverID).filter_by(driverID=driver_id).scalar()
+    if driver_exists is None:
+        return jsonify({"status": "fail", "data": {"tma_id": "%s does not correspond to a driver model" % tma_id}}), 400
+
+    prediction_confirmation = request.json.get('prediction_confirmation')
+    if prediction_confirmation is None:
+        return jsonify({"status": "fail",
+                        "data": {"prediction_confirmation": "No {prediction_confirmation} in body of request"}}), 400
+
+    if not prediction_confirmation:
+        session_num = request.json.get('session_num')
+        if session_num is None:
+            return jsonify({"status": "fail", "data": {"session_num": "No {session_num} in body of request"}}), 400
+        logs = db.session.query(Logs).filter_by(
+            driverID=driver_id,
+            sessionNum=session_num
+        )
+        logs.delete()
+        db.session.commit()
+
+    return jsonify({"status": "success", "data": None}), 200
+
+
+if __name__ == '__main__':
+    if len(sys.argv) >= 2:
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db/' + sys.argv[1]
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db/' + DEFAULT_DB_PATH  # default db
+
+    db.create_all()
+    app.run(host="0.0.0.0")
