@@ -17,6 +17,11 @@ $ source venv/scripts/activate
 # install server dependencies
 $ pip install 
 
+# Optionally manually create sqlite database (requires sqlite3 binaries)
+$ cd /db
+$ sqlite3 [db_name] (this step requires sqlite3 binaries)
+$ sqlite> .read [init.sql or init_with_data.sql]
+$ sqlite> .quit
 ```
 
 Launch project locally for development:
@@ -24,8 +29,11 @@ Launch project locally for development:
 # start virtual environment if not yet done
 $ source venv/bin/activate
 
-# start server
+# start server with the default database
 $ python server.py
+
+# start server with a custom database (will create sqlite database file within /db if it does not already exist)
+$ python server.py [db_path]
 ```
 
 
