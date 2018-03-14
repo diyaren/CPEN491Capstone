@@ -7,6 +7,8 @@ from random import randint
 import time
 import multiprocessing
 import sys
+
+import utils
 # sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/model')
 # from predict_model import predict
 
@@ -203,14 +205,16 @@ def patch_model_result(tma_id):
         new_session_num = db.session.query(func.max(Logs.sessionNum)).filter_by(driverID=driver_id).scalar() + 1
         new_sample_num = 0
         for feature in data['features']:
+            (x, y) = utils.cartesian(feature['geometry']['coordinates'][1],
+                                     feature['geometry']['coordinates'][0])[:2]
             new_log = Logs(
                 driverID=driver_id,
                 sessionNum=new_session_num,
                 sampleNum=new_sample_num,
                 time=feature['properties']['time'],
                 timeLong=feature['properties']['time_long'],
-                xCoord=feature['geometry']['coordinates'][0],
-                yCoord=feature['geometry']['coordinates'][1],
+                xCoord=x,
+                yCoord=y
             )
             db.session.add(new_log)
             new_sample_num += 1
