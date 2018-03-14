@@ -13,8 +13,8 @@ import sys
 TODO
 - implement proper model prediction and training
 - implement multiprocessing for model prediction/training/logging: half done
-- add push notifications to CMA with session_num and driver_id
-- refactor code to be more modular (use flask's blueprint)
+- add push notifications to CMA with session_num and tma_id/driver_id
+- refactor code to be more modular (use flask's blueprint): no longer priority
 - write unit tests
 - allow for DB initialization through running server: done
 """
@@ -22,6 +22,11 @@ TODO
 
 app = Flask(__name__)
 
+
+pn_client = PushNotifications(
+    instance_id='105aa624-524f-4fca-84a5-ee1f86872ece',
+    secret_key='74E645E65BAE00A26F2EE06464DF4D6',
+)
 
 #DB setup
 DEFAULT_DB_PATH = 'test.db'
@@ -47,12 +52,6 @@ class TMAs(db.Model):
     __tablename__ = 'TMAs'
 
 
-class Drivers(db.Model):
-    driverID = db.Column(db.Integer, primary_key=True)
-    prediction = db.Column(db.Integer)
-    __tablename__ = 'Drivers'
-
-
 class LogsSchema(ma.ModelSchema):
     class Meta:
         model = Logs
@@ -61,11 +60,6 @@ class LogsSchema(ma.ModelSchema):
 class TMAsSchema(ma.ModelSchema):
     class Meta:
         model = TMAs
-
-
-class DriversSchema(ma.ModelSchema):
-    class Meta:
-        model = Drivers
 
 
 # Translation from tmaID to current driverID according to dispatch system
@@ -89,39 +83,47 @@ def make_prediction_async(driver_id):
     print('async: making prediction')
     time.sleep(5)  # example model take 5s to make predictions
     x = randint(0, 9)
-    driver = Drivers.query.get(driver_id)
     if x < 3:
-        driver.prediction = 0;
-        #push notification goes here?
-    else:
-        driver.prediction = 1;
-    db.session.commit()
-    # print(driver_id)
-    # print(results[driver_id])
-    print('async: prediction made')
+        #push notification
+        response = pn_client.publish(
+            interests=['prediction'],
+            publish_body={
+                'fcm': {
+                    'notification': {
+                        'title': 'Hi!',
+                        'body': 'This is my first Push Notification!'
+                    }
+                }
+            }
+        )
+        print(response['publishId'])
+
+    print('async: prediction made for driver' + driver_id)
     return
 
 
 # QUICK TEST ROUTE; IGNORE
 @app.route('/db/<int:tma_id>', methods=['POST'])
 def db_test_route(tma_id):
-    # temp prediction
-    tma_exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
-    if tma_exists is None:
-        return jsonify({"status": "fail", "data": {"tma_id": "%s is not registered" % tma_id}}), 400
-
-    driver_id = tmaID_to_driverID(tma_id)
-    if driver_id is None:
-        return jsonify({"status": "fail",
-                        "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
-
-    driver_exists = db.session.query(Drivers.driverID).filter_by(driverID=driver_id).scalar()
-    if driver_exists is None:
-        return jsonify({"status": "fail", "data": {"tma_id": "%s does not correspond to a driver model" % tma_id}}), 400
-
-    p = multiprocessing.Process(target=make_prediction_async, args=(driver_id,))
-    p.start()
     return jsonify({"status": "success", "data": None}), 200
+
+
+#Test for push notifications
+@app.route('/tma/push', methods=['POST'])
+def push_notif():
+    response = pn_client.publish(
+        interests=['prediction'],
+        publish_body={
+            'fcm': {
+                'notification': {
+                    'title': 'Hi!',
+                    'body': 'This is my first Push Notification!',
+                }
+            }
+        }
+    )
+    print(response['publishId'])
+    return 'push notification sent', 200
 
 
 # Endpoints to enable TMA tracking functionalities
@@ -178,121 +180,10 @@ def delete_tma(tma_id):
         return jsonify({"status": "fail", "data": None}), 200
 
 
-# Endpoints for driver models
-
-# Create a new model for a driver
-@app.route('/model/<int:tma_id>', methods=['POST'])
-def post_model(tma_id):
-    tma_exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
-    if tma_exists is None:
-        return jsonify({"status": "fail", "data": {"tma_id": "%s is not registered" % tma_id}}), 400
-
-    driver_id = tmaID_to_driverID(tma_id)
-    if driver_id is None:
-        return jsonify({"status": "fail",
-                        "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
-
-    driver_exists = db.session.query(Drivers.driverID).filter_by(driverID=driver_id).scalar()
-    if driver_exists is not None:
-        return jsonify({"status": "fail",
-                        "data": {"tma_id": "%s corresponds to a driver which already has a model" % tma_id}}), 403
-
-    new_driver = Drivers(driverID=driver_id, prediction=-1)
-    db.session.add(new_driver)
-    db.session.commit()
-    return jsonify({"status": "success", "data": None}), 201
-
-
-# Train a single driver model with a log
-@app.route('/model/<int:tma_id>', methods=['PATCH'])
-def patch_model(tma_id):
-    tma_exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
-    if tma_exists is None:
-        return jsonify({"status": "fail", "data": {"tma_id": "%s is not registered" % tma_id}}), 400
-
-    driver_id = tmaID_to_driverID(tma_id)
-    if driver_id is None:
-        return jsonify({"status": "fail",
-                        "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
-
-    driver_exists = db.session.query(Drivers.driverID).filter_by(driverID=driver_id).scalar()
-    if driver_exists is None:
-        return jsonify({"status": "fail", "data": {"tma_id": "%s does not correspond to a driver model" % tma_id}}), 400
-
-    if 'log' not in request.files:
-        return jsonify({"status": "fail", "data": {"log": "no log file attached"}}), 400
-    else:
-        file = request.files['log']
-        data = json.loads(file.read())
-        new_session_num = db.session.query(func.max(Logs.sessionNum)).filter_by(driverID=driver_id).scalar() + 1
-        new_sample_num = 0
-        for feature in data['features']:
-            new_log = Logs(
-                driverID=driver_id,
-                sessionNum=new_session_num,
-                sampleNum=new_sample_num,
-                time=feature['properties']['time'],
-                timeLong=feature['properties']['time_long'],
-                xCoord=feature['geometry']['coordinates'][0],
-                yCoord=feature['geometry']['coordinates'][1],
-            )
-            db.session.add(new_log)
-            new_sample_num += 1
-        db.session.commit()
-
-    return jsonify({"status": "success", "data": None}), 200
-
-
-# Delete a single driver model
-@app.route('/model/<int:tma_id>', methods=['DELETE'])
-def delete_model(tma_id):
-    tma_exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
-    if tma_exists is None:
-        return jsonify({"status": "fail", "data": {"tma_id": "%s is not registered" % tma_id}}), 400
-
-    driver_id = tmaID_to_driverID(tma_id)
-    if driver_id is None:
-        return jsonify({"status": "fail",
-                        "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
-
-    driver = Drivers.query.get(driver_id)
-    if driver is None:
-        return jsonify({"status": "fail", "data": {"tma_id": "%s does not correspond to a driver model" % tma_id}}), 400
-
-    db.session.delete(driver)
-    db.session.commit()
-    return jsonify({"status": "success", "data": None}), 200
-
-
 # Endpoints for model predictions
 
-# Get most recent prediction for a single driver
-@app.route('/model/<int:tma_id>/prediction', methods=['GET'])
-def get_model_result(tma_id):
-    tma_exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
-    if tma_exists is None:
-        return jsonify({"status": "fail", "data": {"tma_id": "%s is not registered" % tma_id}}), 400
-
-    driver_id = tmaID_to_driverID(tma_id)
-    if driver_id is None:
-        return jsonify({"status": "fail",
-                        "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
-
-    driver = Drivers.query.get(driver_id)
-    if driver is None:
-        return jsonify({"status": "fail", "data": {"tma_id": "%s does not correspond to a driver model" % tma_id}}), 400
-
-    pred = driver.prediction
-    if pred == -1:
-        return jsonify({"status": "success", "data": {"prediction": None}}), 200
-    elif pred == 0:
-        return jsonify({"status": "success", "data": {"prediction": False}}), 200
-    else:
-        return jsonify({"status": "success", "data": {"prediction": True}}), 200
-
-
 # Update prediction for a single driver based on log
-@app.route('/model/<int:tma_id>/prediction', methods=['PATCH'])
+@app.route('/model/<int:tma_id>/prediction', methods=['POST'])
 def patch_model_result(tma_id):
     tma_exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
     if tma_exists is None:
@@ -302,10 +193,6 @@ def patch_model_result(tma_id):
     if driver_id is None:
         return jsonify({"status": "fail",
                         "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
-
-    driver_exists = db.session.query(Drivers.driverID).filter_by(driverID=driver_id).scalar()
-    if driver_exists is None:
-        return jsonify({"status": "fail", "data": {"tma_id": "%s does not correspond to a driver model" % tma_id}}), 400
 
     if 'log' not in request.files:
         return jsonify({"status": "fail", "data": {"log": "no log file attached"}}), 400
@@ -336,7 +223,7 @@ def patch_model_result(tma_id):
 
 
 # Confirm whether driver anomly was correct or incorrect
-@app.route('/model/<int:tma_id>/prediction', methods=['PUT'])
+@app.route('/model/<int:tma_id>/prediction', methods=['PATCH'])
 def put_model_result(tma_id):
     tma_exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
     if tma_exists is None:
@@ -346,10 +233,6 @@ def put_model_result(tma_id):
     if driver_id is None:
         return jsonify({"status": "fail",
                         "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
-
-    driver_exists = db.session.query(Drivers.driverID).filter_by(driverID=driver_id).scalar()
-    if driver_exists is None:
-        return jsonify({"status": "fail", "data": {"tma_id": "%s does not correspond to a driver model" % tma_id}}), 400
 
     prediction_confirmation = request.json.get('prediction_confirmation')
     if prediction_confirmation is None:
@@ -370,11 +253,15 @@ def put_model_result(tma_id):
     return jsonify({"status": "success", "data": None}), 200
 
 
-if __name__ == '__main__':
-    if len(sys.argv) >= 2:
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db/' + sys.argv[1]
+def init_db(args):
+    if len(args) >= 2:
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db/' + args[1]
     else:
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db/' + DEFAULT_DB_PATH  # default db
 
     db.create_all()
+
+
+if __name__ == '__main__':
+    init_db(sys.argv)
     app.run(host="0.0.0.0")
