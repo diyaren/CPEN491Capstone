@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, json
 from sqlalchemy import func
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
+from pusher_push_notifications import PushNotifications
 from random import randint
 import time
 import multiprocessing

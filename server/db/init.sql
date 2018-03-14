@@ -16,9 +16,3 @@ CREATE TABLE "TMAs" (
   "yCoord" FLOAT,
   PRIMARY KEY ("tmaID")
 );
-
-CREATE TABLE "Drivers" (
-  "driverID" INTEGER NOT NULL,
-  prediction INTEGER,
-  PRIMARY KEY ("driverID")
-);
