@@ -56,13 +56,18 @@ def make_prediction(driver_id):
 #Test for push notifications
 @app.route('/tma/push', methods=['POST'])
 def push_notif():
+	tma_id = '5';
 	response = pn_client.publish(
 		interests=['prediction'],
 		publish_body={
 			'fcm': {
 	  			'notification': {
-	    			'title': 'Hi!',
-	    			'body': 'This is my first Push Notification!',
+	    			'title': 'Unknown Driver',
+	    			'body': 'An unknown driver has been detected for TMA %s' % tma_id,
+	  			}
+	  			'data': {
+	  				'tma': '%s' % tma_id, 
+	  				'session': '17',
 	  			}
 			}
 		}
