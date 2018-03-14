@@ -64,7 +64,7 @@ def push_notif():
 	  			'notification': {
 	    			'title': 'Unknown Driver',
 	    			'body': 'An unknown driver has been detected for TMA %s' % tma_id,
-	  			}
+	  			},
 	  			'data': {
 	  				'tma': '%s' % tma_id, 
 	  				'session': '17',
