@@ -56,7 +56,7 @@ def make_prediction(driver_id):
 #Test for push notifications
 @app.route('/tma/push', methods=['POST'])
 def push_notif():
-	tma_id = '5';
+	tma_id = randint(1,100);
 	response = pn_client.publish(
 		interests=['prediction'],
 		publish_body={

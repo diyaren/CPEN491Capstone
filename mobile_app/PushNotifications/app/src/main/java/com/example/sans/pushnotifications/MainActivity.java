@@ -4,11 +4,16 @@ import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.TextView;
 
 
+import com.google.firebase.messaging.RemoteMessage;
+import com.pusher.pushnotifications.PushNotificationReceivedListener;
 import com.pusher.pushnotifications.PushNotifications;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,13 +24,31 @@ public class MainActivity extends AppCompatActivity {
         PushNotifications.subscribe("prediction");
 
         Intent intent = getIntent();
+        String tma = intent.getStringExtra("tma");
+        String session = intent.getStringExtra("session");
+
+        final TextView textView = findViewById(R.id.textView);
+        textView.setText(tma);
+
+        PushNotifications.setOnMessageReceivedListener(new PushNotificationReceivedListener() {
+            @Override
+            public void onMessageReceived(RemoteMessage remoteMessage){
+                if (remoteMessage.getData().size() > 0) {
+                    textView.setText(remoteMessage.getData().get("tma"));
+                }
+            }
+        });
+
+
+        /*
         Bundle bundle = intent.getExtras();
         if (bundle != null) {
             for (String key : bundle.keySet()) {
                 Object value = bundle.get(key);
+                Log.d(TAG, key);
                 Log.d(TAG, value.toString());
             }
-        }
+        }*/
 
 
     }
