@@ -27,14 +27,21 @@ public class MainActivity extends AppCompatActivity {
         String tma = intent.getStringExtra("tma");
         String session = intent.getStringExtra("session");
 
-        final TextView textView = findViewById(R.id.textView);
+        TextView textView = findViewById(R.id.textView);
         textView.setText(tma);
 
         PushNotifications.setOnMessageReceivedListener(new PushNotificationReceivedListener() {
             @Override
-            public void onMessageReceived(RemoteMessage remoteMessage){
+            public void onMessageReceived(final RemoteMessage remoteMessage){
                 if (remoteMessage.getData().size() > 0) {
-                    textView.setText(remoteMessage.getData().get("tma"));
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            TextView textView2 = findViewById(R.id.textView);
+                            textView2.setText(remoteMessage.getData().get("tma"));
+                        }
+                    });
+
                 }
             }
         });
