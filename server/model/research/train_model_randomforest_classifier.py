@@ -40,7 +40,7 @@ for i in list(range(REPEAT_RUNS)):
     #print("=============================================")
 
     # load the data, shape is (NUM_DRIVERS * 200, NUM_FEATURES)
-    trips = np.load(os.path.join('feature_generation', 'myfeatures.npy'))  # (18400, 77), 92 drivers
+    trips = np.load('myfeatures.npy'))  # (18400, 77), 92 drivers
 
     number_of_drivers = trips.shape[0] / 200
     truth_driver_start_idx = (TRUTH_DRIVER - 1) * 200
@@ -58,7 +58,7 @@ for i in list(range(REPEAT_RUNS)):
     other_driver_test_trips = other_driver_trips[TRAIN_TRIPS:]
     assert len(other_driver_train_trips) == TRAIN_TRIPS
     assert len(other_driver_test_trips) == NEG_TEST_TRIPS
-    train_others = trips[other_driver_train_trips, :] 
+    train_others = trips[other_driver_train_trips, :]
 
     # extract positive test trips
     test_driver = trips[truth_driver_start_idx + TRAIN_TRIPS:truth_driver_start_idx + 200, :]  # (40, NUM_FEATURES)

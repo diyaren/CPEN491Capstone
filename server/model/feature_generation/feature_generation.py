@@ -1,10 +1,10 @@
 import os
 import numpy as np
 
-from preprocessing import *
+from .preprocessing import *
 
 
-ORIGINAL_DATASET_PATH = "../../../../temp_cpen491_model_setup/training_data/axa_original/"
+ORIGINAL_DATASET_PATH = "./axa_data"
 
 
 def features_from_trip(trip, plotting=False):
@@ -14,9 +14,11 @@ def features_from_trip(trip, plotting=False):
     np.array including features
     list of angles between points in deg
     """
+    if type(trip) != np.ndarray:
+        trip = np.array([np.array(i) for i in trip])
 
     # 1. duration
-    duration = len(trip)    
+    duration = len(trip)
 
     # 2. speed: euclidean distance between adjacent points
     speed = np.sum(np.diff(trip,axis=0)**2,axis=1)**0.5
@@ -24,7 +26,7 @@ def features_from_trip(trip, plotting=False):
     energy_total = sum(energy)
 
     ### 2.1. smooth GPS data (by convolution) ####    
-    smooth_speed =  movingaverage(speed,10) 
+    smooth_speed =  movingaverage(speed,10)
     #smooth_speed[np.where(smooth_speed>65)[0]] = smooth_speed[np.where(smooth_speed>65)[0]-1]
 
     # head changes
@@ -40,10 +42,10 @@ def features_from_trip(trip, plotting=False):
     var_speed = np.var(smooth_speed)
     max_speed = max(smooth_speed)
     # 3. acceleration
-    smooth_accel = np.diff(smooth_speed)    
+    smooth_accel = np.diff(smooth_speed)
 
     # 3.1 get all negative acceleration values
-    accel_s = np.array(smooth_accel)    
+    accel_s = np.array(smooth_accel)
     neg_accel = accel_s[accel_s<0]
     pos_accel = accel_s[accel_s>0]
 
@@ -52,14 +54,14 @@ def features_from_trip(trip, plotting=False):
     mean_braking = neg_accel.mean()
     var_braking = np.var(neg_accel)
     std_acceleration = pos_accel.std()
-    mean_acceleration = pos_accel.mean() 
+    mean_acceleration = pos_accel.mean()
     var_acceleration = np.var(pos_accel)
 
     # summary statistics
     mean_acceleration = pos_accel.mean()
 
     # 4. total distance traveled    
-    total_dist = np.sum(smooth_speed,axis=0)               
+    total_dist = np.sum(smooth_speed,axis=0)
 
     # 5. energy
     energy_per_distance = energy_total / total_dist
@@ -80,8 +82,8 @@ def features_from_trip(trip, plotting=False):
     interval = 7 # 7 seconds following end of stop
 
     # only those which dont exceed indices of trip
-    end_stops = end_stops[end_stops+interval<len(smooth_speed)-1]    
-    n_stops = len(end_stops) 
+    end_stops = end_stops[end_stops+interval<len(smooth_speed)-1]
+    n_stops = len(end_stops)
 
     if n_stops>1:
         anfahren = np.zeros(shape=(1,n_stops)) # initialize array
@@ -91,7 +93,7 @@ def features_from_trip(trip, plotting=False):
             start = end_stops[i]
 
             anfahren[0,i] =  np.diff([smooth_speed[start],smooth_speed[start+interval]])
-       
+
     else:
         anfahren = np.array([0])
 
@@ -100,18 +102,15 @@ def features_from_trip(trip, plotting=False):
     max_anfahren = anfahren.max()
     std_anfahren = anfahren.std()
 
-    # end cell
-    last_cell = rounddown(normalize(trip[-2:,:]),30)[-1]
-
     # speed quantiles
-    speed_quantiles = ss.mstats.mquantiles(smooth_speed,np.linspace(0.02,0.99,25)) 
+    speed_quantiles = ss.mstats.mquantiles(smooth_speed,np.linspace(0.02,0.99,25))
 
     # acceleration quantiles
     accel_quantiles = ss.mstats.mquantiles(smooth_accel,np.linspace(0.02,0.99,25))
 
     ################# PLOTS #################
     if plotting:
-        figure()        
+        figure()
         x = range(1,len(trip)) # x values for plotting
         #plot(x,total_dist,label='velocity') #speed 
         hold('on')
@@ -161,12 +160,13 @@ def generate_from_dataset():
 
         # generate feature matrix for all trips for this driver
         for trip in list(range(1,201)):
-            driver_trip = np.loadtxt(os.path.join(ORIGINAL_DATASET_PATH, 
+            driver_trip = np.loadtxt(os.path.join(ORIGINAL_DATASET_PATH,
                     str(driver),
                     "{}.csv".format(trip)),
                 delimiter=',',
                 skiprows=1)
             driver_features.append(features_from_trip(driver_trip))
+            break
 
         # append the feature matrix for this driver to the master array
         if idx == 0:
@@ -181,7 +181,6 @@ def generate_from_dataset():
 
 
     np.save(os.path.join('myfeatures.npy'), feature_matrix)
-    
 
 
 if __name__ == "__main__":
