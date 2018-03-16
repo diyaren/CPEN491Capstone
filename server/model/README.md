@@ -22,11 +22,8 @@ If you want to format more of your own data or mess with feature engineering, do
 [axa dataset](https://github.com/ChicagoBoothML/DATA___Kaggle___AXADriverTelematicsAnalysis).
 and save its contents to ```./data/axa_original```
 
+## Train model 
+This will save the model in a directory like `/20180131_071447` which will contain the pickled model
 ```
-cd data/
-
-# see available options, default args should be fine
-python format_data.py --help
-
-# formatted data will be in ./data/formatted_data
+python train_model_randomforest_classifier.py
 ```

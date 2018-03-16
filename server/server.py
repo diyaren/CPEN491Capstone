@@ -7,18 +7,10 @@ from random import randint
 import time
 import multiprocessing
 import sys
+import utils
+
 # sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/model')
 # from predict_model import predict
-
-"""
-TODO
-- implement proper model prediction and training
-- implement multiprocessing for model prediction/training/logging: half done
-- add push notifications to CMA with session_num and tma_id/driver_id
-- refactor code to be more modular (use flask's blueprint): no longer priority
-- write unit tests
-- allow for DB initialization through running server: done
-"""
 
 
 app = Flask(__name__)
@@ -32,6 +24,7 @@ pn_client = PushNotifications(
 #DB setup
 DEFAULT_DB_PATH = 'test.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db/' + DEFAULT_DB_PATH
+
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
@@ -237,14 +230,16 @@ def post_prediction(tma_id):
         new_sample_num = 0
         start_time = data['features'][0]['properties']['time']
         for feature in data['features']:
+            (x, y) = utils.cartesian(feature['geometry']['coordinates'][1],
+                                     feature['geometry']['coordinates'][0])[:2]
             new_log = Logs(
                 driverID=driver_id,
                 sessionNum=new_session_num,
                 sampleNum=new_sample_num,
                 time=feature['properties']['time'],
                 timeLong=feature['properties']['time_long'],
-                xCoord=feature['geometry']['coordinates'][0],
-                yCoord=feature['geometry']['coordinates'][1],
+                xCoord=x,
+                yCoord=y
             )
             db.session.add(new_log)
             new_sample_num += 1

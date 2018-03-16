@@ -23,3 +23,4 @@ CREATE TABLE "FalsePredictions" (
   time VARCHAR(255), 
   PRIMARY KEY ("driverID", "sessionNum") 
 );
+
