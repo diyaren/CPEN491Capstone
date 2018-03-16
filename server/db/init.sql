@@ -16,3 +16,10 @@ CREATE TABLE "TMAs" (
   "yCoord" FLOAT,
   PRIMARY KEY ("tmaID")
 );
+
+CREATE TABLE "FalsePredictions" ( 
+  "driverID" INTEGER NOT NULL, 
+  "sessionNum" INTEGER NOT NULL, 
+  time VARCHAR(255), 
+  PRIMARY KEY ("driverID", "sessionNum") 
+);

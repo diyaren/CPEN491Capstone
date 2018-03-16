@@ -17,12 +17,12 @@ CREATE TABLE "TMAs" (
   PRIMARY KEY ("tmaID")
 );
 
-CREATE TABLE "Drivers" (
-  "driverID" INTEGER NOT NULL,
-  prediction INTEGER,
-  PRIMARY KEY ("driverID")
+CREATE TABLE "FalsePredictions" ( 
+  "driverID" INTEGER NOT NULL, 
+  "sessionNum" INTEGER NOT NULL, 
+  time VARCHAR(255), 
+  PRIMARY KEY ("driverID", "sessionNum") 
 );
-
 
 -- SAMPLE DATA
 INSERT INTO Logs
@@ -48,3 +48,7 @@ INSERT INTO TMAs
 VALUES (1, -123.2557982, 49.2676523);
 INSERT INTO TMAs
 VALUES(2, -123.25567797,49.26819027);
+
+
+INSERT INTO FalsePredictions
+VALUES (2, 1, '2018-02-27T06:48:56.128Z');

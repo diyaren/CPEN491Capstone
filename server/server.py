@@ -31,6 +31,7 @@ pn_client = PushNotifications(
 
 #DB setup
 DEFAULT_DB_PATH = 'test.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db/' + DEFAULT_DB_PATH
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
@@ -53,6 +54,13 @@ class TMAs(db.Model):
     __tablename__ = 'TMAs'
 
 
+class FalsePredictions(db.Model):
+    driverID = db.Column(db.Integer, primary_key=True)
+    sessionNum = db.Column(db.Integer, primary_key=True)
+    time = db.Column(db.String(255))
+    __tablename__ = 'FalsePredictions'
+
+
 class LogsSchema(ma.ModelSchema):
     class Meta:
         model = Logs
@@ -61,6 +69,11 @@ class LogsSchema(ma.ModelSchema):
 class TMAsSchema(ma.ModelSchema):
     class Meta:
         model = TMAs
+
+
+class FalsePredictionsSchema(ma.ModelSchema):
+    class Meta:
+        model = FalsePredictions
 
 
 # Translation from tmaID to current driverID according to dispatch system
@@ -80,7 +93,7 @@ def make_prediction(driver_id):
 
 
 # placeholder multiprocessing model
-def make_prediction_async(driver_id):
+def make_prediction_async(driver_id, session_num, start_time):
     print('async: making prediction')
     time.sleep(5)  # example model take 5s to make predictions
     x = randint(0, 9)
@@ -98,8 +111,25 @@ def make_prediction_async(driver_id):
             }
         )
         print(response['publishId'])
-
+        # store pending confirmation
+        new_false_prediction = FalsePredictions(driverID=driver_id, sessionNum=session_num, time=start_time)
+        db.session.add(new_false_prediction)
+        db.session.commit()
     print('async: prediction made for driver' + driver_id)
+    return
+
+
+#false async prediction to test data flow
+def make_false_prediction_async(driver_id, session_num, start_time):
+    print('async: making false prediction')
+    time.sleep(5)
+    #push notification here too
+
+    #store pending confirmation
+    new_false_prediction = FalsePredictions(driverID=driver_id, sessionNum=session_num, time=start_time)
+    db.session.add(new_false_prediction)
+    db.session.commit()
+    print('async: false prediction made')
     return
 
 
@@ -184,8 +214,8 @@ def delete_tma(tma_id):
 # Endpoints for model predictions
 
 # Update prediction for a single driver based on log
-@app.route('/model/<int:tma_id>/prediction', methods=['POST'])
-def patch_model_result(tma_id):
+@app.route('/prediction/<int:tma_id>', methods=['POST'])
+def post_prediction(tma_id):
     tma_exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
     if tma_exists is None:
         return jsonify({"status": "fail", "data": {"tma_id": "%s is not registered" % tma_id}}), 400
@@ -200,8 +230,12 @@ def patch_model_result(tma_id):
     else:
         file = request.files['log']
         data = json.loads(file.read())
-        new_session_num = db.session.query(func.max(Logs.sessionNum)).filter_by(driverID=driver_id).scalar() + 1
+        try:
+            new_session_num = db.session.query(func.max(Logs.sessionNum)).filter_by(driverID=driver_id).scalar() + 1
+        except TypeError:
+            new_session_num = 0
         new_sample_num = 0
+        start_time = data['features'][0]['properties']['time']
         for feature in data['features']:
             new_log = Logs(
                 driverID=driver_id,
@@ -216,49 +250,55 @@ def patch_model_result(tma_id):
             new_sample_num += 1
         db.session.commit()
 
-    # temp prediction
-    p = multiprocessing.Process(target=make_prediction_async, args=(driver_id,))
-    p.start()
-
-    return jsonify({"status": "success", "data": None}), 200
+        # temp prediction
+        p = multiprocessing.Process(target=make_prediction_async, args=(driver_id, new_session_num, start_time))
+        #p = multiprocessing.Process(target=make_false_prediction_async, args=(driver_id, new_session_num, start_time,))
+        p.start()
+        return jsonify({"status": "success", "data": None}), 200
 
 
 # Confirm whether driver anomly was correct or incorrect
-@app.route('/model/<int:tma_id>/prediction', methods=['PATCH'])
-def put_model_result(tma_id):
-    tma_exists = db.session.query(TMAs.tmaID).filter_by(tmaID=tma_id).scalar()
-    if tma_exists is None:
-        return jsonify({"status": "fail", "data": {"tma_id": "%s is not registered" % tma_id}}), 400
-
-    driver_id = tmaID_to_driverID(tma_id)
-    if driver_id is None:
-        return jsonify({"status": "fail",
-                        "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
-
+@app.route('/prediction/<int:driver_id>', methods=['PATCH'])
+def patch_prediction(driver_id):
     prediction_confirmation = request.json.get('prediction_confirmation')
     if prediction_confirmation is None:
         return jsonify({"status": "fail",
                         "data": {"prediction_confirmation": "No {prediction_confirmation} in body of request"}}), 400
 
-    if not prediction_confirmation:
-        session_num = request.json.get('session_num')
-        if session_num is None:
-            return jsonify({"status": "fail", "data": {"session_num": "No {session_num} in body of request"}}), 400
+    session_num = request.json.get('session_num')
+    if session_num is None:
+        return jsonify({"status": "fail", "data": {"session_num": "No {session_num} in body of request"}}), 400
+
+    if prediction_confirmation:
         logs = db.session.query(Logs).filter_by(
             driverID=driver_id,
             sessionNum=session_num
         )
         logs.delete()
         db.session.commit()
+    else:
+        #retrain on this driver with new data already in database
+        print('retraining')
 
+    false_prediction = db.session.query(FalsePredictions).filter_by(
+        driverID=driver_id,
+        sessionNum=session_num
+    )
+    false_prediction.delete()
+    db.session.commit()
     return jsonify({"status": "success", "data": None}), 200
+
+# Get all the false predictions which are pending confirmation
+@app.route('/prediction/false', methods=['GET'])
+def get_false_predictions():
+    false_predictions = FalsePredictions.query.all()
+    false_predictions_result = FalsePredictionsSchema(many=True).dump(false_predictions)
+    return jsonify({"status": "success", "data": {"false_predictions": false_predictions_result}}), 200
 
 
 def init_db(args):
     if len(args) >= 2:
         app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db/' + args[1]
-    else:
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db/' + DEFAULT_DB_PATH  # default db
 
     db.create_all()
 
