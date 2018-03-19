@@ -1,20 +1,21 @@
 from flask import Flask, jsonify, request, json
-from sqlalchemy import func
+from sqlalchemy import func, and_
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from pusher_push_notifications import PushNotifications
 from random import randint
 import time
 import multiprocessing
-import sys
+import os, errno, sys
+
 import utils
+from model.random_forest import predict_model, train_model
 
-# sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/model')
-# from predict_model import predict
-
+PREDICTION_THRESHOLD = 0.3
+CURDIR = os.path.abspath(os.curdir)
+TRAINED_MODELS_DIR = os.path.join(CURDIR, "model", "trained_models")
 
 app = Flask(__name__)
-
 
 pn_client = PushNotifications(
     instance_id='105aa624-524f-4fca-84a5-ee1f86872ece',
@@ -86,30 +87,104 @@ def make_prediction(driver_id):
 
 
 # placeholder multiprocessing model
-def make_prediction_async(driver_id, session_num, start_time):
-    print('async: making prediction')
-    time.sleep(5)  # example model take 5s to make predictions
-    x = randint(0, 9)
-    if x < 3:
-        #push notification
-        response = pn_client.publish(
-            interests=['prediction'],
-            publish_body={
-                'fcm': {
-                    'notification': {
-                        'title': 'Hi!',
-                        'body': 'This is my first Push Notification!'
+def make_prediction_async(driver_id):
+    model_fp = os.path.join(TRAINED_MODELS_DIR, str(driver_id) + ".pkl")
+
+    if not os.path.exists(TRAINED_MODELS_DIR):
+        os.makedirs(TRAINED_MODELS_DIR)
+
+    if os.path.isfile(model_fp):
+        # if model exists
+        print("using trained model for driver: {}".format(driver_id))
+        print("fp: {}".format(model_fp))
+
+        # grab most recent trip session
+        max_session_num = db.session.query(func.max(Logs.sessionNum)).filter_by(driverID=driver_id).scalar()
+        logs = db.session.query(Logs).filter(and_(Logs.driverID==driver_id, Logs.sessionNum==max_session_num)).order_by(
+            Logs.sessionNum.asc(),
+            Logs.sampleNum.asc())
+        logs_result = LogsSchema(many=True).dump(logs)
+
+        trip = []
+        for position in logs_result.data:
+            trip.append([position["xCoord"], position["yCoord"]])
+
+        prediction = predict_model(driver_id, model_fp, trip)[0][1]  # returned value is probabilities of [negative_driver, positive_driver]
+
+        print("Model's confidence in the driver: {}".format(prediction))
+        # act on prediction
+        if prediction < PREDICTION_THRESHOLD:
+            print("anomaly detected, sending push notification for driver_id: {}".format(driver_id))
+            # send notification
+            response = pn_client.publish(
+                interests=['prediction'],
+                publish_body={
+                    'fcm': {
+                        'notification': {
+                            'title': 'anomaly detected',
+                            'body': str(driver_id)
+                        }
                     }
                 }
-            }
-        )
-        print(response['publishId'])
-        # store pending confirmation
-        new_false_prediction = FalsePredictions(driverID=driver_id, sessionNum=session_num, time=start_time)
-        db.session.add(new_false_prediction)
-        db.session.commit()
-    print('async: prediction made for driver' + driver_id)
-    return
+            )
+    else:
+        # else train a new model
+        print("training new model for driver: {}".format(driver_id))
+
+        # grab all positive trips
+        logs = db.session.query(Logs).filter(Logs.driverID==driver_id).order_by(
+            Logs.sessionNum.asc(),
+            Logs.sampleNum.asc())
+        logs_result = LogsSchema(many=True).dump(logs)
+
+        pos_trips = []
+        temp_trip = []
+        session_number = 0
+        for position in logs_result.data:
+            if position["sessionNum"] == session_number:
+                temp_trip.append([position["xCoord"], position["yCoord"]])
+            else:
+                # new session
+                pos_trips.append(temp_trip)
+                temp_trip = []
+                session_number = position["sessionNum"]
+        # when there is only 1 session in the db
+        if not pos_trips:
+            pos_trips.append(temp_trip)
+
+
+        # grab same number of negative trips
+        logs = db.session.query(Logs).filter(Logs.driverID!=driver_id).order_by(
+            Logs.sessionNum.asc(),
+            Logs.sampleNum.asc())
+        logs_result = LogsSchema(many=True).dump(logs)
+
+        pos_sessions = len(pos_trips)  # ensure balanced training set
+        neg_sessions = 0
+        neg_trips = []
+        temp_trip = []
+        session_number = 0
+        for idx, position in enumerate(logs_result.data):
+            if neg_sessions >= pos_sessions:
+                break
+
+            if position["sessionNum"] == session_number:
+                temp_trip.append([position["xCoord"], position["yCoord"]])
+            else:
+                # new session
+                neg_trips.append(temp_trip)
+                temp_trip = []
+                session_number = position["sessionNum"]
+                neg_sessions += 1
+        # when there is only 1 session in the db
+        if not neg_trips:
+            neg_trips.append(temp_trip)
+
+        # normalize the two sample sets
+        if len(neg_trips) < len(pos_trips):
+            del pos_trips[len(neg_trips):]
+
+        train_model(driver_id, model_fp, pos_trips, neg_trips)
 
 
 #false async prediction to test data flow
@@ -131,6 +206,24 @@ def make_false_prediction_async(driver_id, session_num, start_time):
 def db_test_route(tma_id):
     return jsonify({"status": "success", "data": None}), 200
 
+@app.route("/test_logs", methods=["GET"])
+def db_test_logs():
+    max_session_num = db.session.query(func.max(Logs.sessionNum)).filter_by(driverID=1).scalar()
+    logs = db.session.query(Logs).filter(and_(Logs.driverID==1, Logs.sessionNum==max_session_num)).order_by(
+        Logs.sessionNum.asc(),
+        Logs.sampleNum.asc())
+    logs_result = LogsSchema(many=True).dump(logs)
+    return jsonify({"logs": logs_result}), 200
+
+
+@app.route("/test_logs_negs", methods=["GET"])
+def db_test_logs_neg():
+    logs = db.session.query(Logs).filter(Logs.driverID!=1).order_by(
+        Logs.driverID.asc(),
+        Logs.sessionNum.asc(),
+        Logs.sampleNum.asc())
+    logs_result = LogsSchema(many=True).dump(logs)
+    return jsonify({"logs": logs_result}), 200
 
 #Test for push notifications
 @app.route('/tma/push', methods=['POST'])
@@ -218,6 +311,7 @@ def post_prediction(tma_id):
         return jsonify({"status": "fail",
                         "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
 
+    print(request.files)
     if 'log' not in request.files:
         return jsonify({"status": "fail", "data": {"log": "no log file attached"}}), 400
     else:
@@ -229,6 +323,11 @@ def post_prediction(tma_id):
             new_session_num = 0
         new_sample_num = 0
         start_time = data['features'][0]['properties']['time']
+
+        # need to normalize trip to start at 0,0
+        x0 = data['features'][0]['geometry']['coordinates'][1]
+        y0 = data['features'][0]['geometry']['coordinates'][0]
+        (x0, y0) = utils.cartesian(x0, y0)[:2]
         for feature in data['features']:
             (x, y) = utils.cartesian(feature['geometry']['coordinates'][1],
                                      feature['geometry']['coordinates'][0])[:2]
@@ -238,15 +337,15 @@ def post_prediction(tma_id):
                 sampleNum=new_sample_num,
                 time=feature['properties']['time'],
                 timeLong=feature['properties']['time_long'],
-                xCoord=x,
-                yCoord=y
+                xCoord=x-x0,
+                yCoord=y-y0
             )
             db.session.add(new_log)
             new_sample_num += 1
         db.session.commit()
 
         # temp prediction
-        p = multiprocessing.Process(target=make_prediction_async, args=(driver_id, new_session_num, start_time))
+        p = multiprocessing.Process(target=make_prediction_async, args=(driver_id,))
         #p = multiprocessing.Process(target=make_false_prediction_async, args=(driver_id, new_session_num, start_time,))
         p.start()
         return jsonify({"status": "success", "data": None}), 200

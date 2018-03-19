@@ -3,3 +3,4 @@ __pycache__/*
 server.sock
 venv/*
 db/*.db
+model/trained_models

@@ -1,6 +1,9 @@
 # cpen491/server/model/
 directory for the **ML model** component of the project
 
+Files in ```./trained_models/``` contain trained models, format of filename is ```[driver_id].pkl```.  
+Other ```*.py``` files in the current directory contain methods for predicting/training various models.
+
 ## Installing Dependencies
 ```
 # create a virtualenv
