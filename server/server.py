@@ -367,8 +367,12 @@ def patch_prediction(driver_id):
         logs.delete()
         db.session.commit()
     else:
+        model_fp = os.path.join(TRAINED_MODELS_DIR, str(driver_id) + ".pkl")
+
         #retrain on this driver by removing the old model
-        print('retraining')
+        if os.path.isfile(model_fp):
+            os.remove(model_fp)
+            print('removed model for driver {}, it will be created during next prediction'.format(str(driver_id)))
 
 
     false_prediction = db.session.query(FalsePredictions).filter_by(
