@@ -3,10 +3,10 @@ from sqlalchemy import func, and_
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from pusher_push_notifications import PushNotifications
-from random import randint
 import time
 import multiprocessing
-import os, errno, sys
+import os
+import sys
 
 import utils
 from model.random_forest import predict_model, train_model
@@ -76,18 +76,8 @@ def tmaID_to_driverID(tma_id):
     return tma_id;
 
 
-# placeholder model
-def make_prediction(driver_id):
-    time.sleep(5)  # example model take 5s to make predictions
-    x = randint(0, 9)
-    if x < 3:
-        return 0
-    else:
-        return 1
-
-
-# placeholder multiprocessing model
-def make_prediction_async(driver_id):
+# Asynchronous Prediction Using ML Model
+def make_prediction_async(driver_id, session_num, start_time):
     model_fp = os.path.join(TRAINED_MODELS_DIR, str(driver_id) + ".pkl")
 
     if not os.path.exists(TRAINED_MODELS_DIR):
@@ -99,8 +89,7 @@ def make_prediction_async(driver_id):
         print("fp: {}".format(model_fp))
 
         # grab most recent trip session
-        max_session_num = db.session.query(func.max(Logs.sessionNum)).filter_by(driverID=driver_id).scalar()
-        logs = db.session.query(Logs).filter(and_(Logs.driverID==driver_id, Logs.sessionNum==max_session_num)).order_by(
+        logs = db.session.query(Logs).filter(and_(Logs.driverID==driver_id, Logs.sessionNum==session_num)).order_by(
             Logs.sessionNum.asc(),
             Logs.sampleNum.asc())
         logs_result = LogsSchema(many=True).dump(logs)
@@ -127,6 +116,11 @@ def make_prediction_async(driver_id):
                     }
                 }
             )
+
+            # store pending confirmation
+            new_false_prediction = FalsePredictions(driverID=driver_id, sessionNum=session_num, time=start_time)
+            db.session.add(new_false_prediction)
+            db.session.commit()
     else:
         # else train a new model
         print("training new model for driver: {}".format(driver_id))
@@ -201,10 +195,11 @@ def make_false_prediction_async(driver_id, session_num, start_time):
     return
 
 
-# QUICK TEST ROUTE; IGNORE
+# QUICK TEST ROUTES; IGNORE
 @app.route('/db/<int:tma_id>', methods=['POST'])
 def db_test_route(tma_id):
     return jsonify({"status": "success", "data": None}), 200
+
 
 @app.route("/test_logs", methods=["GET"])
 def db_test_logs():
@@ -224,6 +219,7 @@ def db_test_logs_neg():
         Logs.sampleNum.asc())
     logs_result = LogsSchema(many=True).dump(logs)
     return jsonify({"logs": logs_result}), 200
+
 
 #Test for push notifications
 @app.route('/tma/push', methods=['POST'])
@@ -345,7 +341,7 @@ def post_prediction(tma_id):
         db.session.commit()
 
         # temp prediction
-        p = multiprocessing.Process(target=make_prediction_async, args=(driver_id,))
+        p = multiprocessing.Process(target=make_prediction_async, args=(driver_id, new_session_num, start_time,))
         #p = multiprocessing.Process(target=make_false_prediction_async, args=(driver_id, new_session_num, start_time,))
         p.start()
         return jsonify({"status": "success", "data": None}), 200
@@ -371,8 +367,9 @@ def patch_prediction(driver_id):
         logs.delete()
         db.session.commit()
     else:
-        #retrain on this driver with new data already in database
+        #retrain on this driver by removing the old model
         print('retraining')
+
 
     false_prediction = db.session.query(FalsePredictions).filter_by(
         driverID=driver_id,
@@ -381,6 +378,7 @@ def patch_prediction(driver_id):
     false_prediction.delete()
     db.session.commit()
     return jsonify({"status": "success", "data": None}), 200
+
 
 # Get all the false predictions which are pending confirmation
 @app.route('/prediction/false', methods=['GET'])
