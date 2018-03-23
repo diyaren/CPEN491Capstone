@@ -22,7 +22,7 @@ pn_client = PushNotifications(
     secret_key='74E645E65BAE00A26F2EE06464DF4D6',
 )
 
-#DB setup
+# DB setup
 DEFAULT_DB_PATH = 'test.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db/' + DEFAULT_DB_PATH
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -182,13 +182,13 @@ def make_prediction_async(driver_id, session_num, start_time):
         train_model(driver_id, model_fp, pos_trips, neg_trips)
 
 
-#false async prediction to test data flow
+# False async prediction to test data flow
 def make_false_prediction_async(driver_id, session_num, start_time):
     print('async: making false prediction')
     time.sleep(5)
-    #push notification here too
+    # push notification here too
 
-    #store pending confirmation
+    # store pending confirmation
     new_false_prediction = FalsePredictions(driverID=driver_id, sessionNum=session_num, time=start_time)
     db.session.add(new_false_prediction)
     db.session.commit()
@@ -222,7 +222,7 @@ def db_test_logs_neg():
     return jsonify({"logs": logs_result}), 200
 
 
-#Test for push notifications
+# Test for push notifications
 @app.route('/tma/push', methods=['POST'])
 def push_notif():
     response = pn_client.publish(
@@ -308,7 +308,7 @@ def post_prediction(tma_id):
         return jsonify({"status": "fail",
                         "data": {"tma_id": "%s does not correspond to a driver according to dispatch" % tma_id}}), 404
 
-    print(request.files)
+    tmp = request
     if 'log' not in request.files:
         return jsonify({"status": "fail", "data": {"log": "no log file attached"}}), 400
     else:
