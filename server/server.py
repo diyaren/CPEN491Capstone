@@ -25,6 +25,7 @@ pn_client = PushNotifications(
 #DB setup
 DEFAULT_DB_PATH = 'test.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db/' + DEFAULT_DB_PATH
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
@@ -246,7 +247,7 @@ def push_notif():
 def get_tma():
     tmas = TMAs.query.all()
     tmas_result = TMAsSchema(many=True).dump(tmas)
-    return jsonify({"status": "success", "data": {"tmas": tmas_result}}), 200
+    return jsonify({"status": "success", "data": {"tmas": tmas_result.data}}), 200
 
 
 # Create/Register a new TMA
@@ -290,7 +291,7 @@ def delete_tma(tma_id):
     else:
         db.session.delete(tma)
         db.session.commit()
-        return jsonify({"status": "fail", "data": None}), 200
+        return jsonify({"status": "success", "data": None}), 200
 
 
 # Endpoints for model predictions
@@ -374,7 +375,6 @@ def patch_prediction(driver_id):
             os.remove(model_fp)
             print('removed model for driver {}, it will be created during next prediction'.format(str(driver_id)))
 
-
     false_prediction = db.session.query(FalsePredictions).filter_by(
         driverID=driver_id,
         sessionNum=session_num
@@ -389,7 +389,7 @@ def patch_prediction(driver_id):
 def get_false_predictions():
     false_predictions = FalsePredictions.query.all()
     false_predictions_result = FalsePredictionsSchema(many=True).dump(false_predictions)
-    return jsonify({"status": "success", "data": {"false_predictions": false_predictions_result}}), 200
+    return jsonify({"status": "success", "data": {"false_predictions": false_predictions_result.data}}), 200
 
 
 def init_db(args):
