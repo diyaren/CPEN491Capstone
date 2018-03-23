@@ -4,11 +4,14 @@ import unittest
 import json
 
 TEST_DB = 'unittest.db'
+TEST_DATA = 'test_data2.geojson'
+TEST_NEG_SAMPLES = 'neg_samples.geojson'
 
 two_up = os.path.abspath(os.path.join(__file__, '../../..'))
 sys.path.append(two_up)
 
-from server import app, db, FalsePredictions
+from server import app, db, FalsePredictions, Logs
+from utils import cartesian
 
 
 class BasicUnitTests(unittest.TestCase):
@@ -75,16 +78,114 @@ class BasicUnitTests(unittest.TestCase):
                            content_type='application/json')
         self.assertEqual(res.status_code, 400)
 
+    def test_get_false_predictions(self):
+        new_false_prediction = FalsePredictions(driverID=0, sessionNum=0, time='test_time')
+        db.session.add(new_false_prediction)
+        db.session.commit()
+
+        res = self.app.get('prediction/false')
+        self.assertEqual(res.status_code, 200)
+
+        data = json.loads(res.get_data(as_text=True))
+        self.assertEqual(data['data']['false_predictions'][0]['time'], 'test_time')
+
+    def test_patch_prediction_true(self):
+        new_false_prediction = FalsePredictions(driverID=0, sessionNum=0, time='test_time')
+        db.session.add(new_false_prediction)
+        db.session.commit()
+
+        res = self.app.patch('prediction/0',
+                             data=json.dumps(dict(session_num=0, prediction_confirmation=True)),
+                             content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+
+        res = self.app.get('prediction/false')
+        data = json.loads(res.get_data(as_text=True))
+        self.assertEqual(len(data['data']['false_predictions']), 0)
+
+    def test_patch_prediction_false(self):
+        new_false_prediction = FalsePredictions(driverID=0, sessionNum=0, time='test_time')
+        db.session.add(new_false_prediction)
+        db.session.commit()
+
+        res = self.app.patch('prediction/0',
+                             data=json.dumps(dict(session_num=0, prediction_confirmation=True)),
+                             content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+
+        res = self.app.get('prediction/false')
+        data = json.loads(res.get_data(as_text=True))
+        self.assertEqual(len(data['data']['false_predictions']), 0)
+
+    def test_patch_prediction_no_confirmation(self):
+        res = self.app.patch('prediction/0',
+                             data=json.dumps(dict(session_num=0)),
+                             content_type='application/json')
+        self.assertEqual(res.status_code, 400)
+
+    def test_patch_prediction_no_session_num(self):
+        res = self.app.patch('prediction/0',
+                             data=json.dumps(dict(prediction_confirmation=True)),
+                             content_type='application/json')
+        self.assertEqual(res.status_code, 400)
+
+    def test_post_prediction_bad_tma(self):
+        with open(TEST_DATA, 'rb') as fp:
+            data = {'log': fp}
+            res = self.app.post('/prediction/1',
+                                data=data,
+                                content_type='multipart/form-data')
+            self.assertEqual(res.status_code, 400)
+
+    def test_post_prediction_no_log(self):
+        res = self.app.post('tma/1')
+        with open(TEST_DATA, 'rb') as fp:
+            data = {'not_log': fp}
+            res = self.app.post('/prediction/1',
+                                data=data,
+                                content_type='multipart/form-data')
+            self.assertEqual(res.status_code, 400)
+    '''
     def test_post_prediction(self):
+        init_neg_samples()
         res = self.app.post('tma/1')
 
-        with open('test_data.geojson', 'rb') as fp:
-            data = {'log': (fp, fp.name)}
+        with open(TEST_DATA, 'rb') as fp:
+            data = {'log': fp}
 
             res = self.app.post('/prediction/1',
                                 data=data,
                                 content_type='multipart/form-data')
             self.assertEqual(res.status_code, 200)
+    '''
+
+
+# HELPERS
+def init_neg_samples():
+    with open(TEST_NEG_SAMPLES, 'rb') as fp:
+        data = json.loads(fp.read())
+        new_session_num = 0
+        new_sample_num = 0
+
+        # need to normalize trip to start at 0,0
+        x0 = data['features'][0]['geometry']['coordinates'][1]
+        y0 = data['features'][0]['geometry']['coordinates'][0]
+        (x0, y0) = cartesian(x0, y0)[:2]
+        for feature in data['features']:
+            (x, y) = cartesian(feature['geometry']['coordinates'][1],
+                               feature['geometry']['coordinates'][0])[:2]
+            new_log = Logs(
+                driverID=2,
+                sessionNum=new_session_num,
+                sampleNum=new_sample_num,
+                time=feature['properties']['time'],
+                timeLong=feature['properties']['time_long'],
+                xCoord=x - x0,
+                yCoord=y - y0
+            )
+            db.session.add(new_log)
+            new_sample_num += 1
+        db.session.commit()
 
 
 if __name__ == '__main__':
