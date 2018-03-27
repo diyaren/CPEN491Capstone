@@ -2,3 +2,5 @@ __pycache__/*
 *.pyc
 server.sock
 venv/*
+db/*.db
+model/trained_models
