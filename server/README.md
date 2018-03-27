@@ -40,8 +40,71 @@ $ python server.py [db_path]
 
 # Production Server
 
-## The following has already been done and is only a description of the setup
-on the instance.
+## HTTPS setup
+ACME.sh is a free Automated Certificate Management Environment that registers certificates through Let's Encrypt Certificate Authority. To install run:
+
+```bash
+$ curl https://get.acme.sh | sh
+```
+
+Generate SSL certs
+```bash
+$ sudo su
+# service nginx stop
+# acme.sh --issue --standalone -d YOUR.DOMAIN.com
+# service nginx start
+```
+
+copy the SSL certs to ```/var/www/cert``` then edit nginx.conf in ```/etc/nginx/sites-enabled/server```
+```bash
+# cp -r ~/.acme.sh/YOUR.DOMAIN.com /var/www/cert/
+# chmod 660 -R /var/www/cert/YOUR.DOMAIN.com
+...
+    ##modify nginx.conf
+...
+# service nginx reload
+```
+
+Next change the nginx settings to use the SSL certs and force all http requests to https
+```/etc/nginx/sites-enabled/server```:
+```
+server {                                                                                                  
+    listen 80;                                                                                            
+    listen [::]:80;                                                                                       
+                                                                                                          
+    return 301 https://$host$request_uri;                                                                 
+}                                                                                                         
+                                                                                                          
+server {                                                                                                  
+    listen 443 default_server ssl;                                                                        
+    ssl_certificate /var/www/cert/YOUR.DOMAIN.com/YOUR.DOMAIN.com.cer;    
+    ssl_certificate_key /var/www/cert/YOUR.DOMAIN.com/YOUR.DOMAIN.com.key;
+                                                                                                          
+    server_name YOUR.DOMAIN.com;                                                              
+                                                                                                          
+    location / {                                                                                          
+        include proxy_params;                                                                             
+        proxy_pass http://unix:/home/ubuntu/cpen491/server/server.sock;                                   
+        proxy_http_version 1.1;                                                                           
+        proxy_set_header Upgrade $http_upgrade;                                                           
+        proxy_set_header Connection 'upgrade';                                                            
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;                                      
+        proxy_set_header Host $host;                                                                      
+        proxy_cache_bypass $http_upgrade;                                                                 
+    }                                                                                                     
+}                                                                                                         
+```
+
+To setup certificate auto-renew run the acme script again:
+```bash
+acme.sh --install-cert -d www.joincartel.com
+  --key-file       /var/www/cert/YOUR.DOMAIN.com/YOUR.DOMAIN.com.key
+  --fullchain-file /var/www/cert/YOUR.DOMAIN.com/fullchain.cer
+  --reloadcmd     "service nginx force-reload"
+```
+This will auto-renew the certificate every 60 days by default.
+
+## Setup on Ubuntu 16.04 Amazon EC2 instance
 
 [Gunicorn](http://gunicorn.org/) is used as http server.
 
