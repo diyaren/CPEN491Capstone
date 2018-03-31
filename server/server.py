@@ -111,8 +111,11 @@ def make_prediction_async(driver_id, session_num, start_time):
                 publish_body={
                     'fcm': {
                         'notification': {
-                            'title': 'anomaly detected',
+                            'title': 'Anomaly detected for driver %s', % driver_id,
                             'body': str(driver_id)
+                        }
+                        'android': {
+                            'click_action': 'ItemListActivity'
                         }
                     }
                 }
@@ -230,8 +233,11 @@ def push_notif():
         publish_body={
             'fcm': {
                 'notification': {
-                    'title': 'Hi!',
-                    'body': 'This is my first Push Notification!',
+                    'title': 'Anomaly detected for driver %s', % driver_id,
+                    'body': str(driver_id)
+                }
+                'android': {
+                    'click_action': 'ItemListActivity'
                 }
             }
         }
