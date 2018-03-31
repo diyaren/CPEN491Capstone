@@ -3,6 +3,7 @@ from sqlalchemy import func, and_
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from pusher_push_notifications import PushNotifications
+from random import *
 import time
 import multiprocessing
 import os
@@ -115,7 +116,7 @@ def make_prediction_async(driver_id, session_num, start_time):
                             'body': str(driver_id)
                         },
 			'android': {
-                            'click_action': 'ItemListActivity'
+                            'click_action': 'ITEMLIST'
                         }
                     }
                 }
@@ -228,6 +229,7 @@ def db_test_logs_neg():
 # Test for push notifications
 @app.route('/tma/push', methods=['POST'])
 def push_notif():
+    driver_id = randint(1, 100)
     response = pn_client.publish(
         interests=['prediction'],
         publish_body={
@@ -237,7 +239,7 @@ def push_notif():
                     'body': str(driver_id)
                 },
                 'android': {
-                    'click_action': 'ItemListActivity'
+                    'click_action': 'ITEMLIST'
                 }
             }
         }
