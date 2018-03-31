@@ -40,7 +40,7 @@ for i in list(range(REPEAT_RUNS)):
     #print("=============================================")
 
     # load the data, shape is (NUM_DRIVERS * 200, NUM_FEATURES)
-    trips = np.load('myfeatures.npy'))  # (18400, 77), 92 drivers
+    trips = np.load('myfeatures.npy')  # (18400, 77), 92 drivers
 
     number_of_drivers = trips.shape[0] / 200
     truth_driver_start_idx = (TRUTH_DRIVER - 1) * 200
@@ -81,7 +81,7 @@ for i in list(range(REPEAT_RUNS)):
 
     # train the model
     #model = svm.SVC(C=1000, kernel='rbf', decision_function_shape="ovr")
-    model = RandomForestClassifier(n_estimators=1000, min_impurity_decrease=1.1)
+    model = RandomForestClassifier(n_estimators=1000)
     model.fit(train_data, np.ravel(train_labels))
     #model1 = RandomForestClassifier(n_estimators=1000)
     #model2 = ExtraTreesClassifier(n_estimators=1000)
