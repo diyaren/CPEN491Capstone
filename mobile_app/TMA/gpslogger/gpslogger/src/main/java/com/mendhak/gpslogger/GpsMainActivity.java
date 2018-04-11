@@ -22,7 +22,10 @@ package com.mendhak.gpslogger;
 
 import android.app.Fragment;
 import android.app.FragmentTransaction;
-import android.content.*;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -30,7 +33,11 @@ import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.location.LocationManager;
 import android.net.Uri;
-import android.os.*;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
@@ -44,13 +51,30 @@ import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.text.InputType;
 import android.util.DisplayMetrics;
-import android.view.*;
-import android.widget.*;
+import android.view.Display;
+import android.view.Gravity;
+import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.ArrayAdapter;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.SpinnerAdapter;
+import android.widget.Toast;
+
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.amulyakhare.textdrawable.TextDrawable;
-import com.mendhak.gpslogger.common.*;
+import com.mendhak.gpslogger.common.BundleConstants;
+import com.mendhak.gpslogger.common.EventBusHook;
+import com.mendhak.gpslogger.common.PreferenceHelper;
 import com.mendhak.gpslogger.common.Session;
+import com.mendhak.gpslogger.common.Strings;
+import com.mendhak.gpslogger.common.Systems;
 import com.mendhak.gpslogger.common.events.CommandEvents;
 import com.mendhak.gpslogger.common.events.ProfileEvents;
 import com.mendhak.gpslogger.common.events.ServiceEvents;
@@ -62,7 +86,11 @@ import com.mendhak.gpslogger.senders.FileSender;
 import com.mendhak.gpslogger.senders.FileSenderFactory;
 import com.mendhak.gpslogger.ui.Dialogs;
 import com.mendhak.gpslogger.ui.components.GpsLoggerDrawerItem;
-import com.mendhak.gpslogger.ui.fragments.display.*;
+import com.mendhak.gpslogger.ui.fragments.display.GenericViewFragment;
+import com.mendhak.gpslogger.ui.fragments.display.GpsBigViewFragment;
+import com.mendhak.gpslogger.ui.fragments.display.GpsDetailedViewFragment;
+import com.mendhak.gpslogger.ui.fragments.display.GpsLogViewFragment;
+import com.mendhak.gpslogger.ui.fragments.display.GpsSimpleViewFragment;
 import com.mikepenz.materialdrawer.AccountHeader;
 import com.mikepenz.materialdrawer.AccountHeaderBuilder;
 import com.mikepenz.materialdrawer.Drawer;
@@ -72,13 +100,20 @@ import com.mikepenz.materialdrawer.model.ProfileDrawerItem;
 import com.mikepenz.materialdrawer.model.ProfileSettingDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IProfile;
-import de.greenrobot.event.EventBus;
+
 import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import de.greenrobot.event.EventBus;
 
 public class GpsMainActivity extends AppCompatActivity
         implements
@@ -510,18 +545,18 @@ public class GpsMainActivity extends AppCompatActivity
         materialDrawer.addItem(new DividerDrawerItem());
 
         materialDrawer.addItem(GpsLoggerDrawerItem.newPrimary(R.string.pref_autosend_title, R.string.pref_autosend_summary, R.drawable.autosend, 1003));
-        materialDrawer.addItem(GpsLoggerDrawerItem.newSecondary(R.string.gdocs_setup_title, R.drawable.googledrive, 1004));
-        materialDrawer.addItem(GpsLoggerDrawerItem.newSecondary(R.string.dropbox_setup_title, R.drawable.dropbox, 1005));
-        materialDrawer.addItem(GpsLoggerDrawerItem.newSecondary(R.string.sftp_setup_title, R.drawable.sftp, 1015));
-        materialDrawer.addItem(GpsLoggerDrawerItem.newSecondary(R.string.opengts_setup_title, R.drawable.opengts, 1008));
-        materialDrawer.addItem(GpsLoggerDrawerItem.newSecondary(R.string.osm_setup_title, R.drawable.openstreetmap, 1009));
-        materialDrawer.addItem(GpsLoggerDrawerItem.newSecondary(R.string.autoemail_title, R.drawable.email, 1006));
-        materialDrawer.addItem(GpsLoggerDrawerItem.newSecondary(R.string.owncloud_setup_title, R.drawable.owncloud, 1010));
-        materialDrawer.addItem(GpsLoggerDrawerItem.newSecondary(R.string.autoftp_setup_title, R.drawable.ftp, 1007));
+        //materialDrawer.addItem(GpsLoggerDrawerItem.newSecondary(R.string.gdocs_setup_title, R.drawable.googledrive, 1004));
+        materialDrawer.addItem(GpsLoggerDrawerItem.newSecondary(R.string.dropbox_setup_title, R.drawable.ftp, 1005));
+       // materialDrawer.addItem(GpsLoggerDrawerItem.newSecondary(R.string.sftp_setup_title, R.drawable.sftp, 1015));
+       // materialDrawer.addItem(GpsLoggerDrawerItem.newSecondary(R.string.opengts_setup_title, R.drawable.opengts, 1008));
+        //materialDrawer.addItem(GpsLoggerDrawerItem.newSecondary(R.string.osm_setup_title, R.drawable.openstreetmap, 1009));
+        //materialDrawer.addItem(GpsLoggerDrawerItem.newSecondary(R.string.autoemail_title, R.drawable.email, 1006));
+        //materialDrawer.addItem(GpsLoggerDrawerItem.newSecondary(R.string.owncloud_setup_title, R.drawable.owncloud, 1010));
+        //materialDrawer.addItem(GpsLoggerDrawerItem.newSecondary(R.string.autoftp_setup_title, R.drawable.ftp, 1007));
 
         materialDrawer.addItem(new DividerDrawerItem());
 
-        materialDrawer.addStickyFooterItem(GpsLoggerDrawerItem.newSecondary(R.string.menu_faq, R.drawable.helpfaq, 9000));
+       // materialDrawer.addStickyFooterItem(GpsLoggerDrawerItem.newSecondary(R.string.menu_faq, R.drawable.helpfaq, 9000));
         materialDrawer.addStickyFooterItem(GpsLoggerDrawerItem.newSecondary(R.string.menu_exit, R.drawable.exit, 9001));
 
 
@@ -832,32 +867,32 @@ public class GpsMainActivity extends AppCompatActivity
             case R.id.mnuShare:
                 share();
                 return true;
-            case R.id.mnuOSM:
-                uploadToOpenStreetMap();
-                return true;
+//            case R.id.mnuOSM:
+//                uploadToOpenStreetMap();
+//                return true;
             case R.id.mnuDropBox:
                 uploadToDropBox();
                 return true;
-            case R.id.mnuGDocs:
-                uploadToGoogleDocs();
-                return true;
-            case R.id.mnuOpenGTS:
-                sendToOpenGTS();
-                return true;
-            case R.id.mnuFtp:
-                sendToFtp();
-                return true;
-            case R.id.mnuEmail:
-                selectAndEmailFile();
-                return true;
+//            case R.id.mnuGDocs:
+//                uploadToGoogleDocs();
+//                return true;
+//            case R.id.mnuOpenGTS:
+//                sendToOpenGTS();
+//                return true;
+//            case R.id.mnuFtp:
+//                sendToFtp();
+//                return true;
+//            case R.id.mnuEmail:
+//                selectAndEmailFile();
+//                return true;
             case R.id.mnuAutoSendNow:
                 forceAutoSendNow();
-            case R.id.mnuOwnCloud:
-                uploadToOwnCloud();
-                return true;
-            case R.id.mnuSFTP:
-                uploadToSFTP();
-                return true;
+//            case R.id.mnuOwnCloud:
+//                uploadToOwnCloud();
+//                return true;
+//            case R.id.mnuSFTP:
+//                uploadToSFTP();
+//                return true;
             default:
                 return true;
         }

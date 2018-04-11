@@ -105,12 +105,14 @@ public class PreferenceHelper {
         return prefs.getString(PreferenceNames.EMAIL_SMTP_SERVER, "");
     }
 
+
     /**
      * Sets SMTP Server to use when sending emails
      */
     public void setSmtpServer(String smtpServer) {
         prefs.edit().putString(PreferenceNames.EMAIL_SMTP_SERVER, smtpServer).apply();
     }
+
 
     /**
      * SMTP Port to use when sending emails
@@ -123,6 +125,7 @@ public class PreferenceHelper {
     public void setSmtpPort(String port) {
         prefs.edit().putString(PreferenceNames.EMAIL_SMTP_PORT, port).apply();
     }
+
 
     /**
      * SMTP Username to use when sending emails
@@ -349,7 +352,7 @@ public class PreferenceHelper {
      */
     @ProfilePreference(name= PreferenceNames.MINIMUM_INTERVAL)
     public int getMinimumLoggingInterval() {
-        return Strings.toInt(prefs.getString(PreferenceNames.MINIMUM_INTERVAL, "60"), 60);
+        return Strings.toInt(prefs.getString(PreferenceNames.MINIMUM_INTERVAL, "1"), 1);
     }
 
     /**
@@ -387,7 +390,7 @@ public class PreferenceHelper {
      */
     @ProfilePreference(name= PreferenceNames.MINIMUM_ACCURACY)
     public int getMinimumAccuracy() {
-        return (Strings.toInt(prefs.getString(PreferenceNames.MINIMUM_ACCURACY, "40"), 40));
+        return (Strings.toInt(prefs.getString(PreferenceNames.MINIMUM_ACCURACY, "0"), 0));
     }
 
     public void setMinimumAccuracy(int minimumAccuracy){
@@ -416,7 +419,7 @@ public class PreferenceHelper {
      */
     @ProfilePreference(name= PreferenceNames.LOGGING_RETRY_TIME)
     public int getLoggingRetryPeriod() {
-        return (Strings.toInt(prefs.getString(PreferenceNames.LOGGING_RETRY_TIME, "60"), 60));
+        return (Strings.toInt(prefs.getString(PreferenceNames.LOGGING_RETRY_TIME, "1"), 1));
     }
 
 
@@ -434,7 +437,7 @@ public class PreferenceHelper {
      */
     @ProfilePreference(name= PreferenceNames.ABSOLUTE_TIMEOUT)
     public int getAbsoluteTimeoutForAcquiringPosition() {
-        return (Strings.toInt(prefs.getString(PreferenceNames.ABSOLUTE_TIMEOUT, "120"), 120));
+        return (Strings.toInt(prefs.getString(PreferenceNames.ABSOLUTE_TIMEOUT, "1"), 1));
     }
 
     /**
@@ -530,7 +533,7 @@ public class PreferenceHelper {
      */
     @ProfilePreference(name= PreferenceNames.LOG_TO_GPX)
     public boolean shouldLogToGpx() {
-        return prefs.getBoolean(PreferenceNames.LOG_TO_GPX, true);
+        return prefs.getBoolean(PreferenceNames.LOG_TO_GPX, false);
     }
 
     /**
@@ -555,7 +558,7 @@ public class PreferenceHelper {
      */
     @ProfilePreference(name= PreferenceNames.LOG_TO_GEOJSON)
     public boolean shouldLogToGeoJSON() {
-        return prefs.getBoolean(PreferenceNames.LOG_TO_GEOJSON, false);
+        return prefs.getBoolean(PreferenceNames.LOG_TO_GEOJSON, true);
     }
 
 
@@ -578,7 +581,7 @@ public class PreferenceHelper {
 
     @ProfilePreference(name=PreferenceNames.LOG_TO_URL_METHOD)
     public String getCustomLoggingHTTPMethod(){
-        return prefs.getString(PreferenceNames.LOG_TO_URL_METHOD, "GET");
+        return prefs.getString(PreferenceNames.LOG_TO_URL_METHOD, "POST");
     }
 
     public void setCustomLoggingHTTPMethod(String method){
@@ -740,7 +743,7 @@ public class PreferenceHelper {
      */
     @ProfilePreference(name= PreferenceNames.AUTOSEND_ENABLED)
     public boolean isAutoSendEnabled() {
-        return prefs.getBoolean(PreferenceNames.AUTOSEND_ENABLED, false);
+        return prefs.getBoolean(PreferenceNames.AUTOSEND_ENABLED, true);
     }
 
 
@@ -749,7 +752,7 @@ public class PreferenceHelper {
      */
     @ProfilePreference(name= PreferenceNames.AUTOSEND_FREQUENCY)
     public int getAutoSendInterval() {
-        return Math.round(Float.valueOf(prefs.getString(PreferenceNames.AUTOSEND_FREQUENCY, "60")));
+        return Math.round(Float.valueOf(prefs.getString(PreferenceNames.AUTOSEND_FREQUENCY, "1")));
     }
 
 
@@ -778,7 +781,7 @@ public class PreferenceHelper {
      */
     @ProfilePreference(name= PreferenceNames.AUTOSEND_ZIP)
     public boolean shouldSendZipFile() {
-        return prefs.getBoolean(PreferenceNames.AUTOSEND_ZIP, true);
+        return prefs.getBoolean(PreferenceNames.AUTOSEND_ZIP, false);
     }
 
 

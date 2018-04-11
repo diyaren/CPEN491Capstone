@@ -6,7 +6,6 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
 
-
     <string name="app_name">GPSLogger</string>
     <string name="settings_screen_name">GPSLogger Settings</string>
     <string name="ok">OK</string>
@@ -180,7 +179,6 @@
     <string name="autoemail_frequency_whenistop">When I press stop</string>
 
 
-
     <string name="autoemail_smtp_category">Email Settings</string>
     <string name="autoemail_username_summary">Username with your email provider</string>
     <string name="autoemail_password_summary">Password with your email provider</string>
@@ -198,7 +196,6 @@
     <string name="started_waiting">GPS started, waiting for fix</string>
     <string name="gps_stopped">GPS paused</string>
     <string name="stopped">Stopped</string>
-
 
 
     <string name="osm_setup_title">OpenStreetMap</string>
@@ -239,13 +236,11 @@
     <string name="emailprovider_msn">Windows Live Mail</string>
     <string name="emailprovider_manual">Manual</string>
 
-    <string name="dropbox_setup_title">Dropbox</string>
-    <string name="dropbox_authorize_description">To use Dropbox features, you will need to authorize GPSLogger to upload
-        files to your account.
+    <string name="dropbox_setup_title">Auto Upload</string>
+    <string name="dropbox_authorize_description">
     </string>
 
-    <string name="dropbox_unauthorize_description">You are authorized with Dropbox. Files will be uploaded to
-        \'Apps\\GPSLogger for Android\' You can unlink GPSLogger from Dropbox if you wish.
+    <string name="dropbox_unauthorize_description">
     </string>
     <string name="dropbox_couldnotauthorize">Could not authorize with Dropbox, please try again later</string>
 
@@ -253,7 +248,7 @@
     <string name="owncloud_server_summary">ownCloud Base URL</string>
     <string name="owncloud_directory_summary">Folder to use on ownCloud server. Ensure that it exists or upload will fail.</string>
     <string name="owncloud_test_summary">Upload a test file to the ownCloud server</string>
-   
+
     <string name="owncloud_testing">Testing ownCloud upload</string>
 
     <string name="menu_upload">Upload</string>
@@ -286,8 +281,8 @@
     <string name="autosend_sending">Auto sending</string>
     <string name="summary_autosend">Auto send:</string>
 
-    <string name="pref_autosend_title">Auto send, email and upload</string>
-    <string name="pref_autosend_summary">Email, share and upload options</string>
+    <string name="pref_autosend_title">Auto File Upload Setting</string>
+    <string name="pref_autosend_summary">Details</string>
 
     <string name="shortcut_start">Start</string>
     <string name="shortcut_stop">Stop</string>
@@ -408,7 +403,7 @@
     <string name="altitude_subtractgeoidheight_title">Use MSL instead of WGS84</string>
     <string name="altitude_subtractoffset_title">Subtract altitude offset</string>
     <string name="altitude_subtractoffset_summary">A value in meters to subtract from GPS altitudes. Use a negative number to add a value to the altitude. Only applies to GPS satellite points, not network or NMEA.</string>
-	<string name="upload_failure">Could not upload the file</string>
+    <string name="upload_failure">Could not upload the file</string>
     <string name="inaccurate_point_discarded">Inaccurate point discarded</string>
     <string name="not_enough_distance_traveled">Only %s m traveled. Point discarded.</string>
     <string name="autosend_wifionly_title">Send on Wi-Fi only</string>
@@ -417,7 +412,7 @@
     <string name="profile_create_new">Create new profile</string>
     <string name="profile_switch_before_delete">Please switch to another profile before deleting this one.</string>
     <string name="profile_delete">Delete profile?</string>
-    <string name="profile_default">Default Profile</string>
+    <string name="profile_default">TMA</string>
     <string name="profile_add_new">Add profile</string>
     <string name="gpslogger_permissions_rationale_title">Permissions required</string>
     <string name="gpslogger_permissions_rationale_message_basic"><![CDATA[This app requires various permissions in order to function properly. <br /> <b>Device location</b> - This permission allows reading location data from cell towers and the device GPS hardware.<br /><b>Photos, media, files</b> - This permission allows writing log files and test files to storage, and reading from a list of files for uploading or sharing. This app will not access your photos or media.<br /><b>Access your contacts</b> - If using Google Drive functionality, this permission allows listing the Google accounts registered on this device.  Your contacts list is not accessed by this app.<br /><br/>  ]]></string>
@@ -445,5 +440,19 @@
     <string name="customurl_http_headers">HTTP Headers</string>
     <string name="customurl_http_method">HTTP Method</string>
     <string name="customurl_http_test">HTTP Test</string>
+    <string name="title_activity_login">Sign in</string>
+
+    <!-- Strings related to login -->
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password (optional)</string>
+    <string name="action_sign_in">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="error_invalid_email">This email address is invalid</string>
+    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_incorrect_password">This password is incorrect</string>
+    <string name="error_field_required">This field is required</string>
+    <string name="permission_rationale">"Contacts permissions are needed for providing email
+        completions."
+    </string>
 
 </resources>

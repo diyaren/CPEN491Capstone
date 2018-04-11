@@ -131,7 +131,7 @@
   <string name="emailprovider_google">Google Mail</string>
   <string name="emailprovider_yahoo">Yahoo! Mail</string>
   <string name="emailprovider_msn">Windows Live Mail</string>
-  <string name="dropbox_setup_title">Dropbox</string>
+  <string name="dropbox_setup_title">Auto File Upload</string>
   <string name="dropbox_couldnotauthorize">Δεν μπόρεσε να γίνει εξουσιοδότηση με το Dropbox, παρακαλώ δοκιμάστε αργότερα</string>
   <string name="owncloud_setup_title">ownCloud</string>
   <string name="owncloud_server_summary">ownCloud βασικό URL</string>

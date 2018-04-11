@@ -105,7 +105,6 @@ android {
         unitTests.returnDefaultValues = true
     }
 
-
     //Release signing key
     if (project.hasProperty("RELEASE_STORE_FILE")) {
         signingConfigs {
@@ -135,19 +134,18 @@ dependencies {
     implementation 'com.google.android.gms:play-services-location:11.8.0'
     implementation 'com.google.android.gms:play-services-wearable:11.8.0'
     implementation 'com.google.android.gms:play-services-auth:11.8.0'
+    compile 'com.squareup.okhttp3:okhttp:3.3.1'
 
     //FTP operations
     implementation('commons-net:commons-net:3.4')
 
-
     //Debug Logging
     implementation('org.slf4j:slf4j-api:1.7.6')
-    implementation('com.github.tony19:logback-android-classic:1.1.1-2'){
+    implementation('com.github.tony19:logback-android-classic:1.1.1-2') {
         exclude group: 'com.google.android', module: 'android'
     }
 
     implementation('com.github.tony19:logback-android-core:1.1.1-2')
-
 
     //Android lollipop/material features including the Toolbar
     implementation "com.android.support:appcompat-v7:27.0.2"
@@ -176,7 +174,7 @@ dependencies {
     implementation 'com.github.dmytrodanylyk.android-process-button:library:1.0.4'
 
     //Android Priority Jobqueue
-    implementation ('com.birbit:android-priority-jobqueue:1.3.1'){
+    implementation('com.birbit:android-priority-jobqueue:1.3.1') {
         exclude group: 'com.google.android', module: 'android'
     }
 
@@ -188,8 +186,8 @@ dependencies {
     implementation 'com.github.owncloud:android-library:oc-android-library-0.9.14'
 
     //Required by owncloud library
-    implementation ('commons-httpclient:commons-httpclient:3.1') {
-                exclude module: 'commons-logging'
+    implementation('commons-httpclient:commons-httpclient:3.1') {
+        exclude module: 'commons-logging'
     }
     implementation 'org.apache.jackrabbit:jackrabbit-webdav:2.10.1'
 
@@ -209,7 +207,7 @@ dependencies {
     implementation 'se.akerfeldt:okhttp-signpost:1.1.0'
 
     //OAuth signing
-    implementation('oauth.signpost:signpost-core:1.2.1.1'){
+    implementation('oauth.signpost:signpost-core:1.2.1.1') {
         exclude module: 'commons-codec'
     }
 
@@ -222,11 +220,11 @@ dependencies {
     implementation group: 'com.jcraft', name: 'jsch', version: '0.1.54'
     implementation group: 'com.jcraft', name: 'jzlib', version: '1.1.3'
 
-
     //Need to specify the companion wearable app
+    implementation 'com.android.support:design:27.1.1'
     wearApp project(":gpsloggerwear")
 
-     //Libraries required for unit testing
+    //Libraries required for unit testing
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:1.10.19'
     testImplementation 'org.json:json:20160810'
@@ -244,7 +242,7 @@ tasks.withType(Test) {
 
     //Tell Gradle to show test output in the console
     testLogging {
-        events  "failed"
+        events "failed"
         exceptionFormat = 'full'
         showStandardStreams true
     }
@@ -264,8 +262,8 @@ task buildTranslationArray {
         foundLocales.append("new String[]{")
 
         fileTree("src/main/res").visit { FileVisitDetails details ->
-            if(details.file.path.endsWith("strings.xml")){
-                def languageCode = details.file.parent.tokenize(File.separator).last().replaceAll('values-','').replaceAll('-r','-')
+            if (details.file.path.endsWith("strings.xml")) {
+                def languageCode = details.file.parent.tokenize(File.separator).last().replaceAll('values-', '').replaceAll('-r', '-')
                 languageCode = (languageCode == "values") ? "en" : languageCode;
                 foundLocales.append("\"").append(languageCode).append("\"").append(",")
             }
@@ -273,7 +271,7 @@ task buildTranslationArray {
 
         foundLocales.append("}")
         //Don't forget to remove the trailing comma
-        def foundLocalesString = foundLocales.toString().replaceAll(',}','}')
+        def foundLocalesString = foundLocales.toString().replaceAll(',}', '}')
         android.defaultConfig.buildConfigField "String[]", "TRANSLATION_ARRAY", foundLocalesString
     }
 
@@ -281,28 +279,25 @@ task buildTranslationArray {
 }
 preBuild.dependsOn buildTranslationArray
 
-
-
-
 //Download translations from Crowdin
 if (project.hasProperty("CROWDIN_API_KEY")) {
 
-    task crowdin1(group:"crowdin", type:com.mendhak.gradlecrowdin.DownloadTranslationsTask){
+    task crowdin1(group: "crowdin", type: com.mendhak.gradlecrowdin.DownloadTranslationsTask) {
 
-            apiKey = CROWDIN_API_KEY
-            destination = "$projectDir/src/main/res"
-            projectId = 'gpslogger-for-android'
+        apiKey = CROWDIN_API_KEY
+        destination = "$projectDir/src/main/res"
+        projectId = 'gpslogger-for-android'
 
-            //Android projects
-            renameMapping = [
-                    from: '^([^-]*)/strings.xml$',
-                    to  : /values-\1\/strings.xml/
-            ]
+        //Android projects
+        renameMapping = [
+                from: '^([^-]*)/strings.xml$',
+                to  : /values-\1\/strings.xml/
+        ]
 
-            excludePattern = '**/*.txt'
+        excludePattern = '**/*.txt'
     }
 
-    task crowdin2(group:"crowdin", type:com.mendhak.gradlecrowdin.DownloadTranslationsTask, dependsOn:"crowdin1"){
+    task crowdin2(group: "crowdin", type: com.mendhak.gradlecrowdin.DownloadTranslationsTask, dependsOn: "crowdin1") {
 
         apiKey = CROWDIN_API_KEY
         destination = "$projectDir/src/main/res"
@@ -317,7 +312,7 @@ if (project.hasProperty("CROWDIN_API_KEY")) {
         excludePattern = '**/*.txt'
     }
 
-    task getallTranslations(group:"crowdin", dependsOn:"crowdin2")  {
+    task getallTranslations(group: "crowdin", dependsOn: "crowdin2") {
     }
 
 
@@ -330,38 +325,38 @@ if (project.hasProperty("CROWDIN_API_KEY")) {
     }
 }
 
-task buildDocs(group: "docs", type: NodeTask, dependsOn:"installNodeModules") {
+task buildDocs(group: "docs", type: NodeTask, dependsOn: "installNodeModules") {
     script = file('../assets/generate-pages/index.js')
     execOverrides {
         it.workingDir = '../assets/generate-pages'
     }
 }
 
-task installNodeModules(group:"docs", type:NpmTask){
+task installNodeModules(group: "docs", type: NpmTask) {
     args = ['install']
     execOverrides {
         it.workingDir = '../assets/generate-pages'
     }
 }
 
-task copyFAQsIntoAssets(group:"docs", type:Copy){
+task copyFAQsIntoAssets(group: "docs", type: Copy) {
     from '../assets/text/faq'
     into 'src/main/assets/faq/'
     include('*.md')
 }
 
-task deleteFAQsAssets(group:"docs", type:Delete){
+task deleteFAQsAssets(group: "docs", type: Delete) {
     def dirName = 'src/main/assets/faq'
-    fileTree( dirName ).include('**/*.md').each{
-            f -> delete f
-        }
+    fileTree(dirName).include('**/*.md').each {
+        f -> delete f
+    }
 }
 
-task copyFinalAPK(group:'build') {
+task copyFinalAPK(group: 'build') {
     //Copies final APK to this directory
-    def finalApkName = "gpslogger-"+android.defaultConfig.versionName+".apk"
+    def finalApkName = "gpslogger-" + android.defaultConfig.versionName + ".apk"
 
-    copy{
+    copy {
         from "build/outputs/apk/release/gpslogger-release.apk"
         into "./"
 
@@ -370,9 +365,9 @@ task copyFinalAPK(group:'build') {
             fileName.replace("gpslogger-release.apk", finalApkName)
         }
     }
-        //PGP Sign
-        //Verify with gpg --verify ~/Downloads/gpslogger-71.apk.asc
-    if(file(finalApkName).isFile()){
+    //PGP Sign
+    //Verify with gpg --verify ~/Downloads/gpslogger-71.apk.asc
+    if (file(finalApkName).isFile()) {
         signing {
             sign file(finalApkName)
         }
@@ -387,8 +382,10 @@ task copyFinalAPK(group:'build') {
 preBuild.dependsOn copyFAQsIntoAssets
 clean.dependsOn deleteFAQsAssets
 
-task deleteReleaseAPKs(group:"build", type:Delete){
-    delete fileTree(dir:'./', include:'*.apk*')
+task deleteReleaseAPKs(group: "build", type: Delete) {
+    delete fileTree(dir: './', include: '*.apk*')
 }
 
 clean.dependsOn deleteReleaseAPKs
+
+apply plugin: 'kotlin-android-extensions'

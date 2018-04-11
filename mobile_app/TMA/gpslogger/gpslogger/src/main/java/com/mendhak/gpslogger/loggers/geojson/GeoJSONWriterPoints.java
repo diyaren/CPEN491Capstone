@@ -14,9 +14,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Date;
 
-/**
- * Created by clemens on 10.05.17.
- */
+
 
 
 public class GeoJSONWriterPoints implements Runnable {

@@ -10,9 +10,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created by clemens on 10.05.17.
- */
+
 
 public class GeoJSONLogger implements FileLogger {
     final static Object lock = new Object();

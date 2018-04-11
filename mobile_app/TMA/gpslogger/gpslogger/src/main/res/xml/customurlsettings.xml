@@ -28,7 +28,7 @@
         android:hint="Content-Type: application/x-www-form-urlencoded\nAuthorization: Basic abcdefg\nApiToken: 12345"
         android:title="@string/customurl_http_headers" />
     <EditTextPreference
-        android:defaultValue="GET"
+        android:defaultValue="POST"
         android:key="log_customurl_method"
         android:selectAllOnFocus="true"
         android:singleLine="true"

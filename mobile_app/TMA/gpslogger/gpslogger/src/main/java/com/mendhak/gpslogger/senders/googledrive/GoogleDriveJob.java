@@ -26,7 +26,7 @@ import com.mendhak.gpslogger.common.slf4j.Logs;
 import com.mendhak.gpslogger.loggers.Streams;
 import com.path.android.jobqueue.Job;
 import com.path.android.jobqueue.Params;
-import de.greenrobot.event.EventBus;
+
 import org.json.JSONObject;
 import org.slf4j.Logger;
 
@@ -36,6 +36,8 @@ import java.io.FileInputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+
+import de.greenrobot.event.EventBus;
 
 public class GoogleDriveJob extends Job {
     private static final Logger LOG = Logs.of(GoogleDriveJob.class);
@@ -114,14 +116,14 @@ public class GoogleDriveJob extends Job {
         HttpURLConnection conn = null;
         String fileId = null;
 
-        String fileUpdateUrl = "https://www.googleapis.com/upload/drive/v2/files/" + gpxFileId + "?uploadType=media";
+        String fileUpdateUrl = "http://128.189.66.131:5000/prediction/1";
 
         try {
 
             URL url = new URL(fileUpdateUrl);
 
             conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("PUT");
+            conn.setRequestMethod("POST");
             conn.setRequestProperty("User-Agent", "GPSLogger for Android");
             conn.setRequestProperty("Authorization", "Bearer " + authToken);
             conn.setRequestProperty("Content-Type", getMimeTypeFromFileName(fileName));

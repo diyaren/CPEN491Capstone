@@ -24,6 +24,7 @@ package com.mendhak.gpslogger.ui.fragments.settings;
 import android.content.Intent;
 import android.os.Bundle;
 import android.preference.Preference;
+
 import com.mendhak.gpslogger.GpsMainActivity;
 import com.mendhak.gpslogger.R;
 import com.mendhak.gpslogger.common.EventBusHook;
@@ -34,12 +35,12 @@ import com.mendhak.gpslogger.loggers.Files;
 import com.mendhak.gpslogger.senders.dropbox.DropBoxManager;
 import com.mendhak.gpslogger.ui.Dialogs;
 import com.mendhak.gpslogger.ui.fragments.PermissionedPreferenceFragment;
-import de.greenrobot.event.EventBus;
+
 import org.slf4j.Logger;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
+
+import de.greenrobot.event.EventBus;
 
 public class DropboxAuthorizationFragment extends PermissionedPreferenceFragment implements Preference.OnPreferenceClickListener {
 
@@ -78,16 +79,16 @@ public class DropboxAuthorizationFragment extends PermissionedPreferenceFragment
     public void onResume() {
         super.onResume();
 
-        try {
-            if (manager.finishAuthorization()) {
-                startActivity(new Intent(getActivity(), GpsMainActivity.class));
-                getActivity().finish();
-            }
-        } catch (Exception e) {
-            Dialogs.alert(getString(R.string.error), getString(R.string.dropbox_couldnotauthorize),
-                    getActivity());
-            LOG.error(".", e);
-        }
+//        try {
+//            if (manager.finishAuthorization()) {
+//                startActivity(new Intent(getActivity(), GpsMainActivity.class));
+//                getActivity().finish();
+//            }
+//        } catch (Exception e) {
+//            Dialogs.alert(getString(R.string.error), getString(R.string.dropbox_couldnotauthorize),
+//                    getActivity());
+//            LOG.error(".", e);
+//        }
 
     }
 
