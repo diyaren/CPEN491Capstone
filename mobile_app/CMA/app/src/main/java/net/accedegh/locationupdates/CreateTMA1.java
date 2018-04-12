@@ -33,7 +33,7 @@ public class CreateTMA1 extends AppCompatActivity {
         RequestBody body = RequestBody.create(null, new byte[0]);
         EditText number = (EditText)findViewById(R.id.newTMAID);
         String str = number.getText().toString();
-        String path = "http://128.189.70.95:5000/tma/"+str;
+        String path = "http://128.189.66.131:5000/tma/"+str;
         URL url = new URL(path);
         final Request request = new Request.Builder()
                 .url(url)

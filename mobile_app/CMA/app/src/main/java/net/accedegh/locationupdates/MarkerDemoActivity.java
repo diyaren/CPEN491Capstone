@@ -16,72 +16,73 @@ package net.accedegh.locationupdates;
  */
 
 
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.SystemClock;
+import android.support.annotation.ColorInt;
+import android.support.annotation.DrawableRes;
+import android.support.design.widget.Snackbar;
+import android.support.v4.content.res.ResourcesCompat;
+import android.support.v4.graphics.drawable.DrawableCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
+import android.util.Log;
+import android.view.View;
+import android.view.animation.BounceInterpolator;
+import android.view.animation.Interpolator;
+import android.widget.CheckBox;
+import android.widget.ImageView;
+import android.widget.RadioGroup;
+import android.widget.RadioGroup.OnCheckedChangeListener;
+import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.TextView;
+import android.widget.Toast;
 
-        import android.content.Intent;
-        import android.graphics.Bitmap;
-        import android.graphics.Canvas;
-        import android.graphics.Color;
-        import android.graphics.drawable.Drawable;
-        import android.os.Bundle;
-        import android.os.Handler;
-        import android.os.SystemClock;
-        import android.support.annotation.ColorInt;
-        import android.support.annotation.DrawableRes;
-        import android.support.design.widget.Snackbar;
-        import android.support.v4.content.res.ResourcesCompat;
-        import android.support.v4.graphics.drawable.DrawableCompat;
-        import android.support.v7.app.AppCompatActivity;
-        import android.text.SpannableString;
-        import android.text.style.ForegroundColorSpan;
-        import android.util.Log;
-        import android.view.View;
-        import android.view.animation.BounceInterpolator;
-        import android.view.animation.Interpolator;
-        import android.widget.CheckBox;
-        import android.widget.ImageView;
-        import android.widget.RadioGroup;
-        import android.widget.RadioGroup.OnCheckedChangeListener;
-        import android.widget.SeekBar;
-        import android.widget.SeekBar.OnSeekBarChangeListener;
-        import android.widget.TextView;
-        import android.widget.Toast;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.InfoWindowAdapter;
+import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
+import com.google.android.gms.maps.GoogleMap.OnInfoWindowCloseListener;
+import com.google.android.gms.maps.GoogleMap.OnInfoWindowLongClickListener;
+import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
+import com.google.android.gms.maps.GoogleMap.OnMarkerDragListener;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.messaging.RemoteMessage;
+import com.pusher.pushnotifications.PushNotificationReceivedListener;
+import com.pusher.pushnotifications.PushNotifications;
 
-        import com.google.android.gms.maps.CameraUpdateFactory;
-        import com.google.android.gms.maps.GoogleMap;
-        import com.google.android.gms.maps.GoogleMap.InfoWindowAdapter;
-        import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
-        import com.google.android.gms.maps.GoogleMap.OnInfoWindowCloseListener;
-        import com.google.android.gms.maps.GoogleMap.OnInfoWindowLongClickListener;
-        import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
-        import com.google.android.gms.maps.GoogleMap.OnMarkerDragListener;
-        import com.google.android.gms.maps.SupportMapFragment;
-        import com.google.android.gms.maps.model.BitmapDescriptor;
-        import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-        import com.google.android.gms.maps.model.LatLng;
-        import com.google.android.gms.maps.model.LatLngBounds;
-        import com.google.android.gms.maps.model.Marker;
-        import com.google.android.gms.maps.model.MarkerOptions;
-        import com.google.firebase.messaging.RemoteMessage;
-        import com.pusher.pushnotifications.PushNotificationReceivedListener;
-        import com.pusher.pushnotifications.PushNotifications;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-        import org.json.JSONArray;
-        import org.json.JSONException;
-        import org.json.JSONObject;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
-        import java.io.IOException;
-        import java.util.ArrayList;
-        import java.util.HashMap;
-        import java.util.List;
-        import java.util.Random;
-        import java.util.Timer;
-        import java.util.TimerTask;
 
-        import okhttp3.Call;
-        import okhttp3.Callback;
-        import okhttp3.OkHttpClient;
-        import okhttp3.Request;
-        import okhttp3.Response;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 /**
  * This shows how to place markers on a map.
@@ -118,6 +119,7 @@ public class MarkerDemoActivity extends AppCompatActivity implements
         private final View mWindow;
 
         private final View mContents;
+
 
         CustomInfoWindowAdapter() {
             mWindow = getLayoutInflater().inflate(R.layout.custom_info_contents, null);
@@ -235,11 +237,11 @@ public class MarkerDemoActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_marker_demo);
-        try {
-            getTMACoor();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            getTMACoor();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
 
         ALICE_SPRINGS = new LatLng(49.26183805, -123.254737);
@@ -282,10 +284,12 @@ public class MarkerDemoActivity extends AppCompatActivity implements
             }
         });
 
+
     }
 
+
     @Override
-    public void onMapReady(GoogleMap map) {
+    public void onMapReady(GoogleMap map) throws IOException {
         mMap = map;
 
         // Hide the zoom controls as the button panel will cover it.
@@ -339,45 +343,178 @@ public class MarkerDemoActivity extends AppCompatActivity implements
 
         return rangey;
     }
-    public void addMarkersToMap() {
+
+
+    public void addMarkersToMap() throws IOException {
+
+
+        int height = 150;
+        int width = 150;
+        BitmapDrawable bitmapdraw1 = (BitmapDrawable)getResources().getDrawable(R.drawable.blue);
+        Bitmap a = bitmapdraw1.getBitmap();
+        Bitmap smallMarker1 = Bitmap.createScaledBitmap(a,width,height,false);
+
+        BitmapDrawable bitmapdraw2 = (BitmapDrawable)getResources().getDrawable(R.drawable.green);
+        Bitmap b = bitmapdraw2.getBitmap();
+        Bitmap smallMarker2 = Bitmap.createScaledBitmap(b,width,height,false);
+
+        BitmapDrawable bitmapdraw3 = (BitmapDrawable)getResources().getDrawable(R.drawable.gray);
+        Bitmap c = bitmapdraw3.getBitmap();
+        Bitmap smallMarker3 = Bitmap.createScaledBitmap(c,width,height,false);
+
+        BitmapDrawable bitmapdraw4 = (BitmapDrawable)getResources().getDrawable(R.drawable.red);
+        Bitmap d = bitmapdraw4.getBitmap();
+        Bitmap smallMarker4 = Bitmap.createScaledBitmap(d,width,height,false);
+
+        BitmapDrawable bitmapdraw5 = (BitmapDrawable)getResources().getDrawable(R.drawable.orange);
+        Bitmap e = bitmapdraw5.getBitmap();
+        Bitmap smallMarker5 = Bitmap.createScaledBitmap(e,width,height,false);
+
+
 
         LatLng TMA5 = new LatLng(getRandomx(),getRandomy());
         mBrisbane = mMap.addMarker(new MarkerOptions()
                 .position(TMA5)
                 .title("TMA5")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+                .icon(BitmapDescriptorFactory.fromBitmap(smallMarker1)));
+        mBrisbane.showInfoWindow();
 
         // Uses a custom icon with the info window popping out of the center of the icon.
         LatLng TMA4 = new LatLng(getRandomx(),getRandomy());
         mSydney = mMap.addMarker(new MarkerOptions()
                 .position(TMA4)
                 .title("TMA4")
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.arrow))
-                .infoWindowAnchor(0.5f, 0.5f));
+                .icon(BitmapDescriptorFactory.fromBitmap(smallMarker2)));
+       // mSydney.showInfoWindow();
 
         // Creates a draggable marker. Long press to drag.
         LatLng TMA1 = new LatLng(getRandomx(),getRandomy());
         mMelbourne = mMap.addMarker(new MarkerOptions()
                 .position(TMA1)
                 .title("TMA1")
-                .draggable(true));
+                .draggable(true)
+                .icon(BitmapDescriptorFactory.fromBitmap(smallMarker3)));
 
-
-
+//        mMelbourne.showInfoWindow();
         // A few more markers for good measure.
         LatLng TMA2 = new LatLng(getRandomx(),getRandomy());
         mPerth = mMap.addMarker(new MarkerOptions()
                 .position(TMA2)
                 .title("TMA2")
-        );
+                .icon(BitmapDescriptorFactory.fromBitmap(smallMarker4)));
+//        mPerth.showInfoWindow();
+
+
         LatLng TMA3 = new LatLng(getRandomx(),getRandomy());
         mAdelaide = mMap.addMarker(new MarkerOptions()
                 .position(TMA3)
                 .title("TMA3")
-        );
+                .icon(BitmapDescriptorFactory.fromBitmap(smallMarker5)));
+  //      mAdelaide.showInfoWindow();
+
+    }
+//
+//    int height = 150;
+//    int width = 150;
+//    BitmapDrawable bitmapdraw = (BitmapDrawable)getResources().getDrawable(R.mipmap.car_logo);
+//    Bitmap b = bitmapdraw.getBitmap();
+//    Bitmap smallMarker = Bitmap.createScaledBitmap(b,width,height,false);
+
+    public void updateMarkersToMap() throws IOException {
+
+        int height = 150;
+        int width = 150;
+        BitmapDrawable bitmapdraw1 = (BitmapDrawable)getResources().getDrawable(R.drawable.blue);
+        Bitmap a = bitmapdraw1.getBitmap();
+        Bitmap smallMarker1 = Bitmap.createScaledBitmap(a,width,height,false);
+
+        BitmapDrawable bitmapdraw2 = (BitmapDrawable)getResources().getDrawable(R.drawable.green);
+        Bitmap b = bitmapdraw2.getBitmap();
+        Bitmap smallMarker2 = Bitmap.createScaledBitmap(b,width,height,false);
+
+        BitmapDrawable bitmapdraw3 = (BitmapDrawable)getResources().getDrawable(R.drawable.gray);
+        Bitmap c = bitmapdraw3.getBitmap();
+        Bitmap smallMarker3 = Bitmap.createScaledBitmap(c,width,height,false);
+
+        BitmapDrawable bitmapdraw4 = (BitmapDrawable)getResources().getDrawable(R.drawable.red);
+        Bitmap d = bitmapdraw4.getBitmap();
+        Bitmap smallMarker4 = Bitmap.createScaledBitmap(d,width,height,false);
+
+        BitmapDrawable bitmapdraw5 = (BitmapDrawable)getResources().getDrawable(R.drawable.orange);
+        Bitmap e = bitmapdraw5.getBitmap();
+        Bitmap smallMarker5 = Bitmap.createScaledBitmap(e,width,height,false);
+
+
+        getTMACoor();
+
+        while(TMACoor.size()<5){
+
+        }
+        //int i = 0;
+        List<LatLng> points = new ArrayList<LatLng>();
+        for(String key:TMACoor.keySet()){
+            // i++;
+            // String TMA = "TMA"+i;
+            double x = Double.parseDouble(TMACoor.get(key));
+            double y = Double.parseDouble(key);
+            points.add(new LatLng(x,y));
+        }
+
+        // LatLng TMA5 = new LatLng(getRandomx(),getRandomy());
+        mBrisbane = mMap.addMarker(new MarkerOptions()
+                .position(points.get(0))
+                .title("TMA5")
+                .icon(BitmapDescriptorFactory.fromBitmap(smallMarker1)));
+        mBrisbane.showInfoWindow();
+
+        // Uses a custom icon with the info window popping out of the center of the icon.
+        LatLng TMA4 = new LatLng(getRandomx(),getRandomy());
+        mSydney = mMap.addMarker(new MarkerOptions()
+                .position(points.get(1))
+                .title("TMA4")
+                .icon(BitmapDescriptorFactory.fromBitmap(smallMarker2)));
+        // mSydney.showInfoWindow();
+
+        // Creates a draggable marker. Long press to drag.
+        LatLng TMA1 = new LatLng(getRandomx(),getRandomy());
+        mMelbourne = mMap.addMarker(new MarkerOptions()
+                .position(points.get(2))
+                .title("TMA1")
+                .draggable(true)
+                .icon(BitmapDescriptorFactory.fromBitmap(smallMarker3)));
+
+//        mMelbourne.showInfoWindow();
+        // A few more markers for good measure.
+        LatLng TMA2 = new LatLng(getRandomx(),getRandomy());
+        mPerth = mMap.addMarker(new MarkerOptions()
+                .position(points.get(3))
+                .title("TMA2")
+                .icon(BitmapDescriptorFactory.fromBitmap(smallMarker4)));
+//        mPerth.showInfoWindow();
+
+
+        LatLng TMA3 = new LatLng(getRandomx(),getRandomy());
+        mAdelaide = mMap.addMarker(new MarkerOptions()
+                .position(points.get(4))
+                .title("TMA3")
+                .icon(BitmapDescriptorFactory.fromBitmap(smallMarker5)));
+        //      mAdelaide.showInfoWindow();
+
+        LatLngBounds bounds = new LatLngBounds.Builder()
+                .include(points.get(0))
+                .include(points.get(1))
+                .include(points.get(2))
+                .include(points.get(3))
+                .include(points.get(4))
+                .build();
+        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 500));
 
 
     }
+
+
+
+
 
     /**
      * Demonstrates converting a {@link Drawable} to a {@link BitmapDescriptor},
@@ -416,9 +553,9 @@ public class MarkerDemoActivity extends AppCompatActivity implements
             return;
         }
         // Clear the map because we don't want duplicates of the markers.
-        mMap.clear();
-        getTMACoor();
-            addMarkersToMap();
+//   mMap.clear();
+//        updateMarkersToMap();
+        timerAsync.schedule(timerTaskAsync, 0, 10000);
 
     }
 
@@ -482,11 +619,12 @@ public class MarkerDemoActivity extends AppCompatActivity implements
                     }
                 }
             });
-        } else if (marker.equals(mAdelaide)) {
-            // This causes the marker at Adelaide to change color and alpha.
-            marker.setIcon(BitmapDescriptorFactory.defaultMarker(mRandom.nextFloat() * 360));
-            marker.setAlpha(mRandom.nextFloat());
         }
+//        } else if (marker.equals(mAdelaide)) {
+//            // This causes the marker at Adelaide to change color and alpha.
+//            marker.setIcon(BitmapDescriptorFactory.defaultMarker(mRandom.nextFloat() * 360));
+//            marker.setAlpha(mRandom.nextFloat());
+//        }
 
         // Markers have a z-index that is settable and gettable.
         float zIndex = marker.getZIndex() + 1.0f;
@@ -538,7 +676,7 @@ public class MarkerDemoActivity extends AppCompatActivity implements
 
         //RequestBody body = RequestBody.create(null, new byte[0]);
         final Request request = new Request.Builder()
-                .url("http://128.189.70.95:5000/tma")
+                .url("http://128.189.66.131:5000/tma")
                 .get()
                 .build();
 
@@ -568,10 +706,8 @@ public class MarkerDemoActivity extends AppCompatActivity implements
                         Log.v("the messages!!!!!! is", "print" + notifications);
                         String x = notifications.optString("xCoord");
                         String y = notifications.optString("yCoord");
-                        String TMAID = notifications.optString("tmaID");
-                        String outPut = "Suspicious behavior detected for" + x + ":" + y;
                         CMACoorMap(x, y);
-
+                        Log.v("message","get here"+TMACoor);
 
                     }
 
@@ -592,29 +728,41 @@ public class MarkerDemoActivity extends AppCompatActivity implements
         });
 
     }
+
     HashMap<String, String> TMACoor = new HashMap<String, String>();
     public HashMap<String, String> CMACoorMap(String x, String y){
         TMACoor.put(x, y);
+
         return TMACoor;
     }
-    private Handler handler = new Handler();
 
 
-    Timer t = new Timer();
-    void timerMethod(){
-        t.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                try {
-                    getTMACoor();
-                } catch (IOException e) {
-                    e.printStackTrace();
+    Timer timerAsync = new Timer();
+    TimerTask timerTaskAsync = new TimerTask() {
+        @Override
+        public void run() {
+            runOnUiThread(new Runnable() {
+                @Override public void run() {
+                   mMap.clear();
+                    try {
+                        updateMarkersToMap();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
+            });
+        }
+    };
 
 
-            }
-        },10000,10000);
-    }
+//    @Override
+//    protected void onPause(){
+//        handler.removeCallbacks(runnable);
+//        super.onPause();
+//    }
+
+
+
     public void Prediction(View view){
         Intent Intent = new Intent (this,FalseNotifications.class);
         startActivity(Intent);
