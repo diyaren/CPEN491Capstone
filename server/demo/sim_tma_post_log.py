@@ -1,7 +1,7 @@
 import requests
 import sys
 
-URL = 'http://localhost:5000'
+URL = 'https://williamstest.joincartel.com'
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
@@ -9,5 +9,5 @@ if __name__ == "__main__":
         exit(0)
 
     files = {'log': open(sys.argv[1], 'rb')}
-    r = requests.post(URL + '/prediction/' + sys.argv[2], files=files)
+    r = requests.post(URL + '/prediction/' + sys.argv[2], files=files, verify=False)
     print('request sent')

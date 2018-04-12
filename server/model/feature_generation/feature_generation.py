@@ -127,7 +127,7 @@ def features_from_trip(trip, plotting=False):
 
     #legend()
     ######################################
-    return np.concatenate((speed_quantiles,
+    return np.nan_to_num(np.concatenate((speed_quantiles,
         accel_quantiles,
         head_quantiles_x,
         head_quantiles_y,
@@ -146,7 +146,7 @@ def features_from_trip(trip, plotting=False):
             std_anfahren,
             mean_anfahren,
             max_anfahren])
-    ))
+    )))
 
 
 def generate_from_dataset():
