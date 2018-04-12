@@ -77,7 +77,6 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
-
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.OkHttpClient;
@@ -347,7 +346,6 @@ public class MarkerDemoActivity extends AppCompatActivity implements
 
     public void addMarkersToMap() throws IOException {
 
-
         int height = 150;
         int width = 150;
         BitmapDrawable bitmapdraw1 = (BitmapDrawable)getResources().getDrawable(R.drawable.blue);
@@ -369,6 +367,7 @@ public class MarkerDemoActivity extends AppCompatActivity implements
         BitmapDrawable bitmapdraw5 = (BitmapDrawable)getResources().getDrawable(R.drawable.orange);
         Bitmap e = bitmapdraw5.getBitmap();
         Bitmap smallMarker5 = Bitmap.createScaledBitmap(e,width,height,false);
+
 
 
 
@@ -420,44 +419,45 @@ public class MarkerDemoActivity extends AppCompatActivity implements
 //    Bitmap b = bitmapdraw.getBitmap();
 //    Bitmap smallMarker = Bitmap.createScaledBitmap(b,width,height,false);
 
+
+
     public void updateMarkersToMap() throws IOException {
+        getTMACoor();
 
         int height = 150;
         int width = 150;
-        BitmapDrawable bitmapdraw1 = (BitmapDrawable)getResources().getDrawable(R.drawable.blue);
+        BitmapDrawable bitmapdraw1 = (BitmapDrawable) getResources().getDrawable(R.drawable.blue);
         Bitmap a = bitmapdraw1.getBitmap();
-        Bitmap smallMarker1 = Bitmap.createScaledBitmap(a,width,height,false);
+        Bitmap smallMarker1 = Bitmap.createScaledBitmap(a, width, height, false);
 
-        BitmapDrawable bitmapdraw2 = (BitmapDrawable)getResources().getDrawable(R.drawable.green);
+        BitmapDrawable bitmapdraw2 = (BitmapDrawable) getResources().getDrawable(R.drawable.green);
         Bitmap b = bitmapdraw2.getBitmap();
-        Bitmap smallMarker2 = Bitmap.createScaledBitmap(b,width,height,false);
+        Bitmap smallMarker2 = Bitmap.createScaledBitmap(b, width, height, false);
 
-        BitmapDrawable bitmapdraw3 = (BitmapDrawable)getResources().getDrawable(R.drawable.gray);
+        BitmapDrawable bitmapdraw3 = (BitmapDrawable) getResources().getDrawable(R.drawable.gray);
         Bitmap c = bitmapdraw3.getBitmap();
-        Bitmap smallMarker3 = Bitmap.createScaledBitmap(c,width,height,false);
+        Bitmap smallMarker3 = Bitmap.createScaledBitmap(c, width, height, false);
 
-        BitmapDrawable bitmapdraw4 = (BitmapDrawable)getResources().getDrawable(R.drawable.red);
+        BitmapDrawable bitmapdraw4 = (BitmapDrawable) getResources().getDrawable(R.drawable.red);
         Bitmap d = bitmapdraw4.getBitmap();
-        Bitmap smallMarker4 = Bitmap.createScaledBitmap(d,width,height,false);
+        Bitmap smallMarker4 = Bitmap.createScaledBitmap(d, width, height, false);
 
-        BitmapDrawable bitmapdraw5 = (BitmapDrawable)getResources().getDrawable(R.drawable.orange);
+        BitmapDrawable bitmapdraw5 = (BitmapDrawable) getResources().getDrawable(R.drawable.orange);
         Bitmap e = bitmapdraw5.getBitmap();
-        Bitmap smallMarker5 = Bitmap.createScaledBitmap(e,width,height,false);
+        Bitmap smallMarker5 = Bitmap.createScaledBitmap(e, width, height, false);
 
 
-        getTMACoor();
-
-        while(TMACoor.size()<5){
+        while (TMACoor.size() < 5) {
 
         }
         //int i = 0;
         List<LatLng> points = new ArrayList<LatLng>();
-        for(String key:TMACoor.keySet()){
+        for (String key : TMACoor.keySet()) {
             // i++;
             // String TMA = "TMA"+i;
             double x = Double.parseDouble(TMACoor.get(key));
             double y = Double.parseDouble(key);
-            points.add(new LatLng(x,y));
+            points.add(new LatLng(x, y));
         }
 
         // LatLng TMA5 = new LatLng(getRandomx(),getRandomy());
@@ -468,7 +468,7 @@ public class MarkerDemoActivity extends AppCompatActivity implements
         mBrisbane.showInfoWindow();
 
         // Uses a custom icon with the info window popping out of the center of the icon.
-        LatLng TMA4 = new LatLng(getRandomx(),getRandomy());
+        LatLng TMA4 = new LatLng(getRandomx(), getRandomy());
         mSydney = mMap.addMarker(new MarkerOptions()
                 .position(points.get(1))
                 .title("TMA4")
@@ -476,7 +476,7 @@ public class MarkerDemoActivity extends AppCompatActivity implements
         // mSydney.showInfoWindow();
 
         // Creates a draggable marker. Long press to drag.
-        LatLng TMA1 = new LatLng(getRandomx(),getRandomy());
+        LatLng TMA1 = new LatLng(getRandomx(), getRandomy());
         mMelbourne = mMap.addMarker(new MarkerOptions()
                 .position(points.get(2))
                 .title("TMA1")
@@ -485,7 +485,7 @@ public class MarkerDemoActivity extends AppCompatActivity implements
 
 //        mMelbourne.showInfoWindow();
         // A few more markers for good measure.
-        LatLng TMA2 = new LatLng(getRandomx(),getRandomy());
+        LatLng TMA2 = new LatLng(getRandomx(), getRandomy());
         mPerth = mMap.addMarker(new MarkerOptions()
                 .position(points.get(3))
                 .title("TMA2")
@@ -493,7 +493,7 @@ public class MarkerDemoActivity extends AppCompatActivity implements
 //        mPerth.showInfoWindow();
 
 
-        LatLng TMA3 = new LatLng(getRandomx(),getRandomy());
+        LatLng TMA3 = new LatLng(getRandomx(), getRandomy());
         mAdelaide = mMap.addMarker(new MarkerOptions()
                 .position(points.get(4))
                 .title("TMA3")
@@ -507,11 +507,11 @@ public class MarkerDemoActivity extends AppCompatActivity implements
                 .include(points.get(3))
                 .include(points.get(4))
                 .build();
-        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 500));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100));
+
 
 
     }
-
 
 
 
@@ -555,7 +555,7 @@ public class MarkerDemoActivity extends AppCompatActivity implements
         // Clear the map because we don't want duplicates of the markers.
 //   mMap.clear();
 //        updateMarkersToMap();
-        timerAsync.schedule(timerTaskAsync, 0, 10000);
+        timerAsync.schedule(timerTaskAsync, 0, 5000);
 
     }
 

@@ -19,33 +19,39 @@
     android:orientation="vertical">
 
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
 
         <Button
             android:id="@+id/Prediction"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
             android:onClick="Prediction"
             android:text="Predictions" />
 
         <Button
             android:id="@+id/createTMA"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
             android:onClick="CreateTMA"
             android:text="CreateTMA" />
+
+        <Button
+            android:id="@+id/button2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="onResetMap"
+            android:text="TMAUpdate" />
+
     </LinearLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-
-        <fragment
-            android:id="@+id/map"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            class="com.google.android.gms.maps.SupportMapFragment" />
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -60,19 +66,21 @@
 
                 <Button
                     android:id="@+id/clear_map"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="0.5"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:onClick="onClearMap"
-                    android:text="Clear" />
+                    android:text="Clear"
+                    android:visibility="visible" />
 
                 <Button
                     android:id="@+id/reset_map"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="0.5"
+                    android:layout_weight="1"
                     android:onClick="onResetMap"
-                    android:text="Update" />
+                    android:text="Update"
+                    android:visibility="visible" />
             </LinearLayout>
 
             <RadioGroup
@@ -100,6 +108,12 @@
                     android:layout_width="wrap_content" />
             </RadioGroup>
         </LinearLayout>
+
+        <fragment
+            android:id="@+id/map"
+            class="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
     </FrameLayout>
 </LinearLayout>

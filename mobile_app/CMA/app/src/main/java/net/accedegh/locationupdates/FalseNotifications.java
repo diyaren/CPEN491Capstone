@@ -2,12 +2,14 @@ package net.accedegh.locationupdates;
 
 
 import android.app.ListActivity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,6 +20,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -26,21 +30,28 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+
 public class FalseNotifications extends ListActivity {
     List<Map<String,String>> notificationsList = new ArrayList<Map<String,String>>();
-    String[] arr = {"","",""};
-
+    String[] arr;
+    //String[]arr = new String[10];
+private static int driverid;
+private static int sessionNum;
+String  passString;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        arr = new String[]{"", "", ""};
         try {
             getFalseNotification();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        setListAdapter(new ArrayAdapter<String>(this,R.layout.activity_false_notifications,arr));
         Log.v("adapter here","print" + arr);
+
+        setListAdapter(new ArrayAdapter<String>(this,R.layout.activity_false_notifications,arr));
+
 
         ListView listView = getListView();
         listView.setTextFilterEnabled(true);
@@ -51,7 +62,19 @@ public class FalseNotifications extends ListActivity {
                 // When clicked, show a toast with the TextView text
 //                Toast.makeText(getApplicationContext(),
 //                        ((TextView) view).getText(), Toast.LENGTH_SHORT).show();
+                List<String> numbers = new ArrayList<String>();
+                Intent intent  = new Intent(getBaseContext(),NotificationConfirm.class);
+                Pattern p = Pattern.compile("-?\\d+");
+                Matcher m = p.matcher(((TextView)view).getText());
+                while(m.find()){
+                    numbers.add(m.group());
+                }
+                intent.putExtra("driverID",numbers.get(0));
+                intent.putExtra("sessionNum",numbers.get(1));
+                Log.v("print driver","driver"+ driverid);
 
+
+                startActivity(intent);
 
             }
         });
@@ -95,12 +118,18 @@ public class FalseNotifications extends ListActivity {
                     for(int i = 0;i < falsePredictionsArray.length();i++){
                         JSONObject notifications = falsePredictionsArray.getJSONObject(i);
                         Log.v("the messages!!!!!! is", "print"+notifications);
-                        int driverID = notifications.optInt("driverID");
+                        driverid = notifications.optInt("driverID");
+                        sessionNum =notifications.optInt("sessionNum");
                         String Time = notifications.optString("time");
-                        String outPut1 = "driver"+ driverID;
-                        String outPut2 = " detected suspicious behavior at "+Time;
-                        arr[i]=outPut1+outPut2;
-                        notificationsList.add(createNotificationList("Alert:",outPut1+outPut2));
+                        String outPut1 = "driver"+ driverid;
+                        String outPut2 = " in session "+ sessionNum;
+                        String outPut3 = " has been detected suspicious behavior at "+Time;
+                        arr[i]=outPut1+outPut2+outPut3;
+                        passString  = arr[i];
+                        notificationsList.add(createNotificationList("Alert:",outPut1+outPut2+outPut3));
+                        while(arr==null){
+
+                        }
                         Log.v("print notification","notification"+notificationsList);
 
                     }

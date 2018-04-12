@@ -7,7 +7,7 @@ import sys
 URL = 'http://localhost:5000'
 NUM_TMAS = 5
 DATA_FILE = 'marine_to_kingsway.geojson'
-UPDATE_FREQ = 10
+UPDATE_FREQ = 3
 
 
 if __name__ == "__main__":

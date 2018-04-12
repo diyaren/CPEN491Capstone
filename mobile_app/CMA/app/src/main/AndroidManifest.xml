@@ -6,7 +6,6 @@
     <uses-permission android:name="android.permission.LOCATION_HARDWARE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
-
     <!-- To auto-complete the email text field in the login form with the user's emails -->
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.READ_PROFILE" />
@@ -26,6 +25,7 @@
         <activity android:name=".MarkerDemoActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -44,7 +44,7 @@
                 android:value="net.accedegh.locationupdates.PredictionListListActivity" />
         </activity>
         -->
-    <!--
+        <!--
         <activity
             android:name=".ItemListActivity"
             android:label="@string/title_item_list"
@@ -68,7 +68,7 @@
         <activity
             android:name=".CreateTma"
             android:label="@string/title_activity_create_tma" />
-            -->
+        -->
         <activity android:name=".CreateTMA1" />
         <activity android:name=".PopupWindow" />
         <activity android:name=".FalseNotifications">
@@ -77,10 +77,10 @@
 
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
-
         </activity>
         <activity android:name=".dismissNotificationPage" />
-        <!--<activity android:name=".MarkerDemoActivity"></activity>-->
+        <!-- <activity android:name=".MarkerDemoActivity"></activity> -->
+        <activity android:name=".NotificationConfirm"></activity>
     </application>
 
 </manifest>
