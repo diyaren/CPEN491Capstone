@@ -8,8 +8,6 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -30,7 +28,7 @@ import okhttp3.Response;
 
 public class FalseNotifications extends ListActivity {
     List<Map<String,String>> notificationsList = new ArrayList<Map<String,String>>();
-    String[] arr = new String[]{"","","","","","","","","","","",""};
+    String[] arr = {"","",""};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,8 +49,10 @@ public class FalseNotifications extends ListActivity {
             public void onItemClick(AdapterView<?> parent, View view,
                                     int position, long id) {
                 // When clicked, show a toast with the TextView text
-                Toast.makeText(getApplicationContext(),
-                        ((TextView) view).getText(), Toast.LENGTH_SHORT).show();
+//                Toast.makeText(getApplicationContext(),
+//                        ((TextView) view).getText(), Toast.LENGTH_SHORT).show();
+
+
             }
         });
     }
@@ -67,7 +67,7 @@ public class FalseNotifications extends ListActivity {
 
         RequestBody body = RequestBody.create(null, new byte[0]);
         final Request request = new Request.Builder()
-                .url("http://128.189.70.95:5000/prediction/false")
+                .url("http://128.189.66.131:5000/prediction/false")
                 .get()
                 .build();
 

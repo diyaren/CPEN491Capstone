@@ -8,6 +8,8 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 
+import java.io.IOException;
+
 /**
  * Helper class that will delay triggering the OnMapReady callback until both the GoogleMap and the
  * View having completed initialization. This is only necessary if a developer wishes to immediately
@@ -18,7 +20,7 @@ public class OnMapAndViewReadyListener implements OnGlobalLayoutListener, OnMapR
 
     /** A listener that needs to wait for both the GoogleMap and the View to be initialized. */
     public interface OnGlobalLayoutAndMapReadyListener {
-        void onMapReady(GoogleMap googleMap);
+        void onMapReady(GoogleMap googleMap) throws IOException;
     }
 
     private final SupportMapFragment mapFragment;
@@ -60,7 +62,11 @@ public class OnMapAndViewReadyListener implements OnGlobalLayoutListener, OnMapR
         // NOTE: The GoogleMap API specifies the listener is removed just prior to invocation.
         this.googleMap = googleMap;
         isMapReady = true;
-        fireCallbackIfReady();
+        try {
+            fireCallbackIfReady();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @SuppressWarnings("deprecation")  // We use the new method when supported
@@ -74,10 +80,14 @@ public class OnMapAndViewReadyListener implements OnGlobalLayoutListener, OnMapR
             mapView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
         }
         isViewReady = true;
-        fireCallbackIfReady();
+        try {
+            fireCallbackIfReady();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    private void fireCallbackIfReady() {
+    private void fireCallbackIfReady() throws IOException {
         if (isViewReady && isMapReady) {
             devCallback.onMapReady(googleMap);
         }
