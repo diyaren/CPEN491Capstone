@@ -2,10 +2,11 @@ import requests
 import json
 import time
 import random
+import sys
 
 URL = 'http://localhost:5000'
 NUM_TMAS = 5
-DATA_FILE = '20180331.geojson'
+DATA_FILE = 'marine_to_kingsway.geojson'
 UPDATE_FREQ = 10
 
 
