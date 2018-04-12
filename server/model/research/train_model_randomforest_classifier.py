@@ -11,12 +11,12 @@ import pickle
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import random
 
 import os
 import pprint
 import datetime
 
-TRUTH_DRIVER = 29  # driver to build model for
 TRAIN_TRIPS = 150  # train on 160 of a driver's trips
 NEG_TEST_TRIPS = 200 - TRAIN_TRIPS  # how many negative samples in the test set
 
@@ -27,8 +27,14 @@ PCA_COMPONENTS = 50
 
 auc_pr_results = []
 accuracies = []
-fpr = []
-fnr = []
+precisions = []
+recalls = []
+tpr = []  # sensitivity
+tnr = []  # specificity
+fpr = []  # fall-out
+fnr = []  # 
+npv = []
+f1 = []
 for i in list(range(REPEAT_RUNS)):
     data = []
     labels = []
@@ -43,6 +49,8 @@ for i in list(range(REPEAT_RUNS)):
     trips = np.load('myfeatures.npy')  # (18400, 77), 92 drivers
 
     number_of_drivers = trips.shape[0] / 200
+    TRUTH_DRIVER = random.randint(1, number_of_drivers) # driver to build model for
+    print("Training a model for driver id {}".format(TRUTH_DRIVER))
     truth_driver_start_idx = (TRUTH_DRIVER - 1) * 200
 
 
@@ -102,44 +110,48 @@ for i in list(range(REPEAT_RUNS)):
     accuracy_test = []
 
     # samples
-    positives = 0
-    negatives = 0
+    true_positives = 0
+    true_negatives = 0
     false_positives = 0
     false_negatives = 0
     print("Calculating accuracy: ")
     for idx, prediction in enumerate(ret):
     #for idx, prediction in enumerate(ensembled_predictions):
         if prediction > ACCURACY_THRESHOLD:
-            positives += 1
             if 1 == test_labels[idx][0]:
+                true_positives += 1
                 result = 1
             else:
                 false_positives += 1
                 result = 0
         else:
-            negatives += 1
             if 0 == test_labels[idx][0]:
+                true_negatives += 1
                 result = 1
             else:
                 false_negatives += 1
                 result = 0
 
         accuracy_test.append(result)
-    
-    fpr.append(false_positives / negatives)
-    fnr.append(false_negatives / positives)
-    accuracy_score = sum(accuracy_test) / len(accuracy_test)
-    accuracies.append(accuracy_score)
+
+    precisions.append((true_positives)/(true_positives + false_positives))
+    tpr.append(true_positives / (true_positives + false_negatives))
+    tnr.append(true_negatives / (true_negatives + false_positives))
+    fpr.append(false_positives / (true_negatives + false_positives))
+    fnr.append(false_negatives / (true_positives + false_negatives))
+    npv.append(true_negatives / (false_negatives + true_negatives))
+    f1.append((2 * true_positives)/(2 * true_positives + false_positives + false_negatives))
+    accuracies.append((true_positives + true_negatives)/(true_positives + false_positives + false_negatives + true_negatives))
 
     precision, recall, thresholds = metrics.precision_recall_curve(test_labels, ret)
     #precision, recall, thresholds = metrics.precision_recall_curve(test_labels, ensembled_predictions)
     AUC_PR = metrics.auc(recall, precision)
     auc_pr_results.append(AUC_PR)
 
-    print("positives: {0}, false_positives: {1}, negatives: {2}, false_negatives: {3}".format(positives, false_positives, negatives, false_negatives))
+    print("true_positives: {0}, false_positives: {1}, true_negatives: {2}, false_negatives: {3}".format(true_positives, false_positives, true_negatives, false_negatives))
     print("false positive rate: {}".format(fpr[-1]))
     print("false negative rate: {}".format(fnr[-1]))
-    print("Accuracy: {0} PR: {1}".format(accuracy_score, AUC_PR))
+    print("Accuracy: {0} PR: {1}".format(accuracies[-1], AUC_PR))
 
 print("Results from 100 runs:")
 print("\nAUC PR scores")
@@ -154,6 +166,18 @@ print("max: {}".format(max(accuracies)))
 print("mean: {}".format(np.mean(accuracies)))
 print("std: {}".format(np.std(accuracies)))
 print("var: {}".format(np.var(accuracies)))
+print("\nTrue Positive Rate (recall or sensitivity)")
+print("min: {}".format(min(tpr)))
+print("max: {}".format(max(tpr)))
+print("mean: {}".format(np.mean(tpr)))
+print("std: {}".format(np.std(tpr)))
+print("var: {}".format(np.var(tpr)))
+print("\nTrue Negative Rate (specificity)")
+print("min: {}".format(min(tnr)))
+print("max: {}".format(max(tnr)))
+print("mean: {}".format(np.mean(tnr)))
+print("std: {}".format(np.std(tnr)))
+print("var: {}".format(np.var(tnr)))
 print("\nFalse Positive Rate")
 print("min: {}".format(min(fpr)))
 print("max: {}".format(max(fpr)))
@@ -166,3 +190,21 @@ print("max: {}".format(max(fnr)))
 print("mean: {}".format(np.mean(fnr)))
 print("std: {}".format(np.std(fnr)))
 print("var: {}".format(np.var(fnr)))
+print("\nF1 Score")
+print("min: {}".format(min(f1)))
+print("max: {}".format(max(f1)))
+print("mean: {}".format(np.mean(f1)))
+print("std: {}".format(np.std(f1)))
+print("var: {}".format(np.var(f1)))
+print("\nPrecision")
+print("min: {}".format(min(precisions)))
+print("max: {}".format(max(precisions)))
+print("mean: {}".format(np.mean(precision)))
+print("std: {}".format(np.std(precisions)))
+print("var: {}".format(np.var(precisions)))
+print("\nNegative Predictive Value")
+print("min: {}".format(min(npv)))
+print("max: {}".format(max(npv)))
+print("mean: {}".format(np.mean(npv)))
+print("std: {}".format(np.std(npv)))
+print("var: {}".format(np.var(npv)))
